@@ -1,49 +1,69 @@
- // Cargar las situaciones desde la API
- document.addEventListener('DOMContentLoaded', async () => {
-    const selectSituacion = document.getElementById('situacion');
+// Cargar las opciones en los selectores desde la API
+document.addEventListener('DOMContentLoaded', async () => {
+    // Función para cargar opciones en un select
+    async function cargarOpciones(url, selectId) {
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            const select = document.getElementById(selectId);
 
-    try {
-        const response = await fetch('/api/situaciones'); // Llamar a la API
-        const situaciones = await response.json();
-
-        // Agregar las opciones al select
-        situaciones.forEach(situacion => {
-            const option = document.createElement('option');
-            option.value = situacion.id; // Usar el ID como valor
-            option.textContent = situacion.situacion; // Mostrar el texto de la situación
-            selectSituacion.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error al cargar las situaciones:', error);
+            data.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.Id; // Guardar el ID
+                option.textContent = item.Descripcion || item.Situacion; // Mostrar la descripción o situación
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error(`Error al cargar las opciones para ${selectId}:`, error);
+        }
     }
+
+    // Cargar géneros
+    await cargarOpciones('/api/generos', 'genero');
+
+    // Cargar tipos de identificación
+    await cargarOpciones('/api/tipos-id', 'tipo-id');
+
+    // Cargar situaciones
+    await cargarOpciones('/api/situaciones', 'situacion');
 });
 
 // Enviar el formulario
-document.querySelector('form').addEventListener('submit', async (event) => {
-    event.preventDefault(); // Evita el envío predeterminado del formulario
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('formulario');
 
-    const data = {
-        nombre: document.getElementById('nombre').value,
-        tipoId: document.getElementById('tipo-id').value,
-        numeroId: document.getElementById('numero-id').value,
-        genero: document.getElementById('genero').value,
-        telefono: document.getElementById('telefono').value,
-        situacionId: document.getElementById('situacion').value // Enviar solo el ID de la situación
-    };
+    form.addEventListener('submit', async function (event) {
+        event.preventDefault(); // Evitar el comportamiento predeterminado del formulario
 
-    try {
-        const response = await fetch('/api/formulario', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
+        // Recopilar los datos del formulario manualmente
+        const data = {
+            nombre: document.querySelector('[name="nombre"]').value,
+            tipoId: document.querySelector('[name="tipoId"]').value,
+            numeroId: document.querySelector('[name="numeroId"]').value,
+            genero: document.querySelector('[name="genero"]').value,
+            telefono: document.querySelector('[name="telefono"]').value,
+            situacionId: document.querySelector('[name="situacionId"]').value,
+        };
 
-        if (response.ok) {
-            alert('Formulario enviado con éxito.');
-        } else {
-            alert('Error al enviar el formulario.');
+        console.log('Datos enviados:', data); // Verificar los datos enviados
+
+        try {
+            const response = await fetch('/api/formulario', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+
+            if (response.ok) {
+                window.location.href = 'exito.html'; // Redirigir a exito.html si el envío es exitoso
+            } else {
+                alert('Hubo un error al enviar el formulario.');
+            }
+        } catch (error) {
+            console.error('Error al enviar el formulario:', error);
+            alert('No se pudo enviar el formulario.');
         }
-    } catch (error) {
-        console.error('Error al enviar el formulario:', error);
-    }
+    });
 });

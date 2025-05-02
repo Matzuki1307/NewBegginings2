@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario Enviado con Éxito</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Iconos de Heroicons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/heroicons@2.0.18/outline.min.css">
+</head>
+<body class="bg-white">
+    <div class="container mx-auto px-4 py-8">
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center">
+                <img src="assets/image/navbar-Logo3.png" alt="New Beginnings Logo" class="mr-2">
+            </div>
+        </header>
+
+        <main class="max-w-2xl mx-auto text-center py-12">
+            <!-- Icono de éxito -->
+            <div class="mb-6 flex justify-center">
+                <div class="rounded-full bg-green-100 p-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- Mensaje de éxito -->
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">¡Formulario enviado con éxito!</h1>
+            
+            <div class="bg-white shadow-md rounded-lg p-8 mb-8">
+                <p class="text-lg text-gray-600 mb-6">
+                    Gracias por compartir tu historia con nosotros. Hemos recibido tu información y un miembro de nuestro equipo se pondrá en contacto contigo lo antes posible.
+                </p>
+                
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-left">
+                    <p class="text-blue-700">
+                        <span class="font-bold">Información importante:</span> Tu caso será revisado en un plazo máximo de 48 horas hábiles.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Información de contacto -->
+            <div class="mt-8 text-gray-600">
+                <p class="mb-2">¿Tienes alguna pregunta?</p>
+                <p class="font-medium">Contáctanos al: <span class="text-blue-600">support@newbeginnings.org</span></p>
+                <p>O llámanos al: <span class="text-blue-600">+57 3213350550</span></p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(function () {
+                window.location.href = 'index.html'; // Redirigir a index.html después de 3 segundos
+            }, 3000); // 3000 milisegundos = 3 segundos
+        });
+    </script>
+</body>
+</html>

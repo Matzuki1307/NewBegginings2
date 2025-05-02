@@ -19,11 +19,9 @@ module.exports = config;
 
 // Conexión y consulta
 async function connectAndQuery() {
-
-    console.log('Configuración de la base de datos:', config);
     try {
         const pool = await sql.connect(config);
-        const result = await pool.request().query('SELECT * FROM Situacion');
+        const result = await pool.request().query('SELECT * FROM Genero'); // Cambia la consulta según tus necesidades
         console.log(result.recordset);
     } catch (err) {
         console.error('Error al conectar:', err);
