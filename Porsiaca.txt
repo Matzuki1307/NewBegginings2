@@ -1,0 +1,213 @@
+ <!-- donation section -->
+        <!--section class="bg-white py-16">
+
+            <div class="container max-w-screen-xl mx-auto px-4">
+
+                <h1 class="font-semibold text-gray-900 text-xl md:text-4xl text-center mb-16">Latest to donate</h1>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="px-6 py-6 w-full border-2 border-gray-200 rounded-3xl">
+                        <img src="assets/image/donation-1.png" alt="Image" class="mb-6 hover:opacity-75 transition ease-in-out duration-500">
+        
+                        <h4 class="font-semibold text-gray-900 text-lg md:text-2xl mb-6">Help flood victims in <br> Indonesia</h4>
+        
+                        <p class="font-light text-gray-400 text-sm md:text-md lg:text-lg mb-10">Help flood victims in Indonesia by <br> donating sincerely, regardless of the...</p>
+        
+                        <div class="flex items-center justify-between mb-8">
+                            <h6 class="font-light text-gray-400 text-sm md:text-lg">Goals : <span class="font-semibold text-gray-900 text-md md:text-lg">$25000</span></h6>
+        
+                            <h6 class="font-light text-gray-400 text-sm md:text-lg">Raised : <span class="font-semibold text-gray-900 text-md md:text-lg">$21000</span></h6>
+                        </div>
+        
+                        <div class="hidden md:block lg:flex items-center justify-between mb-8">
+                            <div>
+                                <div class="w-72 h-2 bg-info opacity-10 rounded-lg absolute"></div>
+        
+                                <div class="w-56 h-2 bg-info rounded-lg relative"></div>
+                            </div>
+        
+                            <p class="font-light text-gray-900 text-md">84%</p>
+                        </div>
+
+                        <button class="w-full py-4 bg-info font-semibold text-white text-lg rounded-xl hover:bg-blue-800 transition ease-in-out duration-500">Donate</button>
+                    </div>
+
+                    <div class="px-6 py-6 w-full border-2 border-gray-200 rounded-3xl">
+                        <img src="assets/image/donation-2.png" alt="Image" class="mb-6 hover:opacity-75 transition ease-in-out duration-500">
+        
+                        <h4 class="font-semibold text-gray-900 text-lg md:text-2xl mb-6">Donation for COVID-19 in <br> Indonesia</h4>
+        
+                        <p class="font-light text-gray-400 text-sm md:text-md lg:text-lg mb-10">Donation for COVID-19 in Indonesia by <br> donating sincerely, regardless of the...</p>
+        
+                        <div class="flex items-center justify-between mb-8">
+                            <h6 class="font-light text-gray-400 text-sm md:text-lg">Goals : <span class="font-semibold text-gray-900 text-md md:text-lg">$24000</span></h6>
+        
+                            <h6 class="font-light text-gray-400 text-sm md:text-lg">Raised : <span class="font-semibold text-gray-900 text-md md:text-lg">$19000</span></h6>
+                        </div>
+        
+                        <div class="hidden md:block lg:flex items-center justify-between mb-8">
+                            <div>
+                                <div class="w-72 h-2 bg-info opacity-10 rounded-lg absolute"></div>
+        
+                                <div class="w-52 h-2 bg-info rounded-lg relative"></div>
+                            </div>
+        
+                            <p class="font-light text-gray-900 text-md">80%</p>
+                        </div>
+
+                        <button class="w-full py-4 bg-info font-semibold text-white text-lg rounded-xl hover:bg-blue-800 transition ease-in-out duration-500">Donate</button>
+                    </div>
+
+                    <div class="px-6 py-6 w-full border-2 border-gray-200 rounded-3xl">
+                        <img src="assets/image/donation-3.png" alt="Image" class="mb-6 hover:opacity-75 transition ease-in-out duration-500">
+        
+                        <h4 class="font-semibold text-gray-900 text-lg md:text-2xl mb-6">Help homeless cat to find <br> home</h4>
+        
+                        <p class="font-light text-gray-400 text-sm md:text-md lg:text-lg mb-10">Help homeless cat and the oether <br> animals by donating sincerely regar...</p>
+        
+                        <div class="flex items-center justify-between mb-8">
+                            <h6 class="font-light text-gray-400 text-sm md:text-lg">Goals : <span class="font-semibold text-gray-900 text-md md:text-lg">$15000</span></h6>
+        
+                            <h6 class="font-light text-gray-400 text-sm md:text-lg">Raised : <span class="font-semibold text-gray-900 text-md md:text-lg">$13000</span></h6>
+                        </div>
+        
+                        <div class="hidden md:block lg:flex items-center justify-between mb-8">
+                            <div>
+                                <div class="w-72 h-2 bg-info opacity-10 rounded-lg absolute"></div>
+        
+                                <div class="w-60 h-2 bg-info rounded-lg relative"></div>
+                            </div>
+        
+                            <p class="font-light text-gray-900 text-md">86%</p>
+                        </div>
+
+                        <button class="w-full py-4 bg-info font-semibold text-white text-lg rounded-xl hover:bg-blue-800 transition ease-in-out duration-500">Donate</button>
+                    </div>
+
+                    <div class="px-6 py-6 w-full border-2 border-gray-200 rounded-3xl">
+                        <img src="assets/image/donation-4.png" alt="Image" class="mb-6 hover:opacity-75 transition ease-in-out duration-500">
+        
+                        <h4 class="font-semibold text-gray-900 text-lg md:text-2xl mb-6">Help save poor children in <br> Pakistan</h4>
+        
+                        <p class="font-light text-gray-400 text-sm md:text-md lg:text-lg mb-10">Help save poor children in Pakistas by <br> donating sincerely, regardless of the...</p>
+        
+                        <div class="flex items-center justify-between mb-8">
+                            <h6 class="font-light text-gray-400 text-sm md:text-lg">Goals : <span class="font-semibold text-gray-900 text-md md:text-lg">$75000</span></h6>
+        
+                            <h6 class="font-light text-gray-400 text-sm md:text-lg">Raised : <span class="font-semibold text-gray-900 text-md md:text-lg">$50000</span></h6>
+                        </div>
+        
+                        <div class="hidden md:block lg:flex items-center justify-between mb-8">
+                            <div>
+                                <div class="w-72 h-2 bg-info opacity-10 rounded-lg absolute"></div>
+        
+                                <div class="w-48 h-2 bg-info rounded-lg relative"></div>
+                            </div>
+        
+                            <p class="font-light text-gray-900 text-md">66%</p>
+                        </div>
+
+                        <button class="w-full py-4 bg-info font-semibold text-white text-lg rounded-xl hover:bg-blue-800 transition ease-in-out duration-500">Donate</button>
+                    </div>
+
+                    <div class="px-6 py-6 w-full border-2 border-gray-200 rounded-3xl">
+                        <img src="assets/image/donation-5.png" alt="Image" class="mb-6 hover:opacity-75 transition ease-in-out duration-500">
+        
+                        <h4 class="font-semibold text-gray-900 text-lg md:text-2xl mb-6">Lifeskills for children in <br> South Africa</h4>
+        
+                        <p class="font-light text-gray-400 text-sm md:text-md lg:text-lg mb-10">Donating for children in South Africa <br> by donating sincerely, regardless of...</p>
+        
+                        <div class="flex items-center justify-between mb-8">
+                            <h6 class="font-light text-gray-400 text-sm md:text-lg">Goals : <span class="font-semibold text-gray-900 text-md md:text-lg">$45000</span></h6>
+        
+                            <h6 class="font-light text-gray-400 text-sm md:text-lg">Raised : <span class="font-semibold text-gray-900 text-md md:text-lg">$22500</span></h6>
+                        </div>
+        
+                        <div class="hidden md:block lg:flex items-center justify-between mb-8">
+                            <div>
+                                <div class="w-72 h-2 bg-info opacity-10 rounded-lg absolute"></div>
+        
+                                <div class="w-36 h-2 bg-info rounded-lg relative"></div>
+                            </div>
+        
+                            <p class="font-light text-gray-900 text-md">50%</p>
+                        </div>
+
+                        <button class="w-full py-4 bg-info font-semibold text-white text-lg rounded-xl hover:bg-blue-800 transition ease-in-out duration-500">Donate</button>
+                    </div>
+
+                    <div class="px-6 py-6 w-full border-2 border-gray-200 rounded-3xl">
+                        <img src="assets/image/donation-6.png" alt="Image" class="mb-6 hover:opacity-75 transition ease-in-out duration-500">
+        
+                        <h4 class="font-semibold text-gray-900 text-lg md:text-2xl mb-6">Help donate for children <br> with cancer</h4>
+        
+                        <p class="font-light text-gray-400 text-sm md:text-md lg:text-lg mb-10">Help donate for the children with <br> cancer by donating sincerely, regar...</p>
+        
+                        <div class="flex items-center justify-between mb-8">
+                            <h6 class="font-light text-gray-400 text-sm md:text-lg">Goals : <span class="font-semibold text-gray-900 text-md md:text-lg">$50000</span></h6>
+        
+                            <h6 class="font-light text-gray-400 text-sm md:text-lg">Raised : <span class="font-semibold text-gray-900 text-md md:text-lg">$13000</span></h6>
+                        </div>
+        
+                        <div class="hidden md:block lg:flex items-center justify-between mb-8">
+                            <div>
+                                <div class="w-72 h-2 bg-info opacity-10 rounded-lg absolute"></div>
+        
+                                <div class="w-20 h-2 bg-info rounded-lg relative"></div>
+                            </div>
+        
+                            <p class="font-light text-gray-900 text-md">26%</p>
+                        </div>
+
+                        <button class="w-full py-4 bg-info font-semibold text-white text-lg rounded-xl hover:bg-blue-800 transition ease-in-out duration-500">Donate</button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-center">
+                    <button class="px-7 py-5 font-semibold bg-gray-100 text-gray-900 rounded-2xl hover:bg-gray-300 hover:text-gray-600 transition ease-in-out duration-500">More to donate</button>
+                </div>
+
+            </div> <!-- container.//>
+
+        </section-->
+        <!-- donation section //end -->
+
+
+
+
+
+
+
+
+
+        const express = require('express');
+const bodyParser = require('body-parser');
+const sql = require('mssql');
+require('dotenv').config();
+
+
+const app = express();
+const PORT = 3000;
+
+// Middleware para parsear JSON
+app.use(bodyParser.json());
+
+// Ruta para manejar el envío del formulario
+app.post('/submit-form', async (req, res) => {
+    const { nombre, email, telefono, describe } = req.body;
+
+    try {
+        const pool = await sql.connect(config);
+        await pool.request()
+            .input('nombre', sql.NVarChar, nombre)
+            .input('email', sql.NVarChar, email)
+            .input('telefono', sql.NVarChar, telefono)
+            .input('describe', sql.NVarChar, describe)
+            .query('INSERT INTO Prueba (nombre, email, telefono, describe) VALUES (@nombre, @email, @telefono, @describe)');
+        
+        res.status(200).send({ message: 'Datos enviados correctamente' });
+    } catch (err) {
+        console.error('Error al insertar datos:', err);
+        res.status(500).send({ error: 'Error al insertar datos' });
+    }
+});

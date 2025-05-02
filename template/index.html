@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Beginnings</title>
+        <link rel="stylesheet" href="assets/css/tailwind.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.28.0/feather.min.js" integrity="sha512-7x3zila4t2qNycrtZ31HO0NnJr8kg2VI67YLoRSyi9hGhRN66FHYWr7Axa9Y1J9tGYHVBPqIjSE1ogHrJTz51g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script> 
+    </head>
+
+    <body class="font-body">
+
+        <!-- home section -->
+        <section class="bg-white pt-10">
+
+            <div class="container max-w-screen-xl mx-auto px-4">
+
+                <nav class="flex-wrap lg:flex items-center" x-data="{navbarOpen:false}">
+                    <div class="flex items-center mb-10 lg:mb-0">
+                        <img src="assets/image/navbar-Logo3.png" alt="Logo">
+
+                        <button class="lg:hidden w-10 h-10 ml-auto flex items-center justify-center border border-blue-500 text-blue-500 rounded-md" @click="navbarOpen = !navbarOpen">
+                            <i data-feather="menu"></i>
+                        </button>
+                    </div>
+
+                    <ul class="lg:flex flex-col lg:flex-row lg:items-center lg:mx-auto lg:space-x-8 xl:space-x-14" :class="{'hidden':!navbarOpen,'flex':navbarOpen}">
+                        <!--li class="font-semibold text-gray-900 hover:text-gray-400 transition ease-in-out duration-300 mb-5 lg:mb-0">
+                            <a href="#">Inicio</a>
+                        </li>                    
+                        <li class="font-semibold text-gray-900 hover:text-gray-400 transition ease-in-out duration-300 mb-5 lg:mb-0">
+                            <a href="#">sizas</a>
+                        </li>
+                        <li class="font-semibold text-gray-900 hover:text-gray-400 transition ease-in-out duration-300 mb-5 lg:mb-0">
+                            <a href="#">Membership</a>
+                        </li>
+                        <li class="font-semibold text-gray-900 hover:text-gray-400 transition ease-in-out duration-300 mb-5 lg:mb-0">
+                            <a href="#">Sobre nosotros</a>
+                        </li-->
+                    </ul>
+
+                    <div class="lg:flex flex-col md:flex-row md:items-center text-center md:space-x-6" :class="{'hidden':!navbarOpen,'flex':navbarOpen}">
+                        <!--a href="#" class="px-6 py-4 bg-blue-500 text-white font-semibold text-lg rounded-xl hover:bg-blue-700 transition ease-in-out duration-500 mb-5 md:mb-0">Registrate</a-->
+
+                        <a href="#" class="px-6 py-4 border-2 border-blue-500 text-blue-500 font-semibold text-lg rounded-xl hover:bg-blue-700 hover:text-white transition ease-linear duration-500">¿Quieres donar?</a>
+                    </div>
+                </nav>
+
+                <div class="flex flex-col lg:flex-row justify-between space-x-20">
+                    <div class="text-center lg:text-left mt-20">
+                        <h1 class="font-semibold text-gray-900 text-3xl md:text-6xl leading-normal mb-6">No estás perdido,<br> podemos iniciar de nuevo</h1>
+
+                        <p class="font-light text-gray-600 text-md md:text-lg leading-normal mb-12">Describenos tu situación y te guiaremos en tu camino</p>
+
+                        <button onclick="window.location.href='formulario.html'" class="px-20 py-4 bg-info font-semibold text-white text-lg rounded-xl hover:bg-blue-700 transition ease-in-out duration-500">Vamos!</button>
+                    </div>
+
+                    <div class="mt-4">
+                        <img src="assets/image/home-img.png" alt="Image">
+                    </div>
+                </div>
+
+            </div> <!-- container.// -->
+
+        </section>
+        <!-- home section //end -->
+
+        <!-- feature section -->
+        <section class="bg-white md:mt-10">
+
+            <div class="container max-w-screen-xl mx-auto px-4">
+
+                <p class="font-light text-gray-500 text-lg md:text-xl text-center mb-6">¿Ya sabes con quién ir?</p>
+
+                <h1 class="font-semibold text-gray-900 text-xl md:text-4xl text-center leading-normal mb-10">Principales entidades para<br> buscar ayuda</h1>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-20">
+                    <div class="text-center">
+                        <div class="flex justify-center mb-6">
+                            <div class="w-20 py-6 flex justify-center bg-blue-200 bg-opacity-30 text-blue-700 rounded-xl">
+                                <img src="assets/image/DefensoriaPueblo.png" alt="Descripción de la imagen" class="w-12 h-12">
+                            </div>
+                        </div>
+
+                        <h4 class="font-semibold text-lg md:text-2xl text-gray-900 mb-6">Defensoría del pueblo</h4>
+
+                        <p class="font-light text-gray-500 text-md md:text-xl mb-6">Verifica a que dependencia acudir para denunciar desplazamiento forzoso</p>
+
+                        <div class="flex justify-center">
+                            <a href="https://www.defensoria.gov.co/web/guest/directorio-de-dependencias" class="flex items-center gap-5 px-6 py-4 font-semibold text-info text-lg rounded-xl hover:bg-info hover:text-white transition ease-linear duration-500">
+                                Llévame ahí 
+                                <i data-feather="chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <div class="flex justify-center mb-6">
+                            <div class="w-20 py-6 flex justify-center bg-blue-200 bg-opacity-30 text-blue-700 rounded-xl">
+                                <img src="assets/image/lineapurpura.png" alt="Descripción de la imagen" class="w-12 h-12">
+                            </div>
+                        </div>
+
+                        <h4 class="font-semibold text-lg md:text-2xl text-gray-900 mb-6">Línea púrpura</h4>
+
+                        <p class="font-light text-gray-500 text-md md:text-xl mb-6">Comunicate con la línea púrpura para denunciar maltrato fisico y/o psicológico a la mujer</p>
+
+                        <div class="flex justify-center">
+                            <a href="https://www.sdmujer.gov.co/lineapurpura" class="flex items-center gap-5 px-6 py-4 font-semibold text-info text-lg rounded-xl hover:bg-info hover:text-white transition ease-linear duration-500">
+                                Llévame ahí 
+                                <i data-feather="chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <div class="flex justify-center mb-6">
+                            <div class="w-20 py-6 flex justify-center bg-blue-200 bg-opacity-30 text-blue-700 rounded-xl">
+                                <img src="assets/image/icbf.png" alt="Descripción de la imagen" class="w-12 h-12">
+                            </div>
+                        </div>
+
+                        <h4 class="font-semibold text-lg md:text-2xl text-gray-900 mb-6">ICBF</h4>
+
+                        <p class="font-light text-gray-500 text-md md:text-xl mb-6">Verifica a que centro zonal acudir para denunciar maltrato intrafamiliar</p>
+
+                        <div class="flex justify-center">
+                            <a href="https://www.icbf.gov.co/puntos-atencion" class="flex items-center gap-5 px-6 py-4 font-semibold text-info text-lg rounded-xl hover:bg-info hover:text-white transition ease-linear duration-500">
+                                Llévame ahí 
+                                <i data-feather="chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- container.// -->
+
+        </section>
+        <!-- feature section //end -->
+
+        <!-- feature section -->
+        <section class="bg-white pt-16">
+
+            <div class="container max-w-screen-xl mx-auto px-4">
+
+                <div class="flex flex-col lg:flex-row justify-between space-x-16">
+                    <div class="flex justify-center lg:justify-start">
+                        <img src="assets/image/feature-img.png" alt="Image">
+                    </div>
+        
+                    <div class="mt-16">
+                        <h1 class="font-semibold text-gray-900 text-xl md:text-4xl mb-20">Hemos ayudado a miles de <br>colombianos a denunciar</h1>
+        
+                        <div class="grid grid-cols-1 md:grid-cols-2 md:space-x-20 mb-16">
+                            <div class="mb-5 md:mb-0">
+                                <div class="w-20 py-6 flex justify-center bg-info bg-opacity-5 rounded-xl mb-4">
+                                    <i data-feather="users" class="text-info"></i>
+                                </div>
+            
+                                <h3 class="font-semibold text-gray-900 text-xl md:text-3xl mb-4">15,000+</h3>
+            
+                                <p class="font-light text-gray-400 text-md md:text-lg">Colombianos guiados para <br> denunciar desplazamiento forzoso</p>
+                            </div>
+            
+                            <div>
+                                <div class="w-20 py-6 flex justify-center bg-red-500 bg-opacity-5 rounded-xl mb-4">
+                                    <i data-feather="phone" class="text-red-500"></i>
+                                </div>
+            
+                                <h3 class="font-semibold text-gray-900 text-xl md:text-3xl mb-4">8,000+</h3>
+            
+                                <p class="font-light text-gray-400 text-md md:text-lg">Llamadas conectadas a la <br> Línea Púrpura</p>
+                            </div>
+                        </div>
+        
+                        <div class="grid grid-cols-1 md:grid-cols-2 md:space-x-20">
+                            <div class="mb-5 md:mb-0">
+                                <div class="w-20 py-6 flex justify-center bg-yellow-500 bg-opacity-5 rounded-xl mb-4">
+                                    <i data-feather="home" class="text-yellow-500"></i>
+                                </div>
+            
+                                <h3 class="font-semibold text-gray-900 text-xl md:text-3xl mb-4">5,000+</h3>
+            
+                                <p class="font-light text-gray-400 text-md md:text-lg">Casos de maltrato intrafamiliar <br> dirigidos al ICBF</p>
+                            </div>
+            
+                            <div>
+                                <div class="w-20 py-6 flex justify-center bg-green-500 bg-opacity-5 rounded-xl mb-4">
+                                    <i data-feather="smile" class="text-green-500"></i>
+                                </div>
+            
+                                <h3 class="font-semibold text-gray-900 text-xl md:text-3xl mb-4">98%</h3>
+            
+                                <p class="font-light text-gray-400 text-md md:text-lg">Satisfacción de los usuarios <br> con el servicio</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- container.// -->
+
+        </section>
+        <!-- feature section //end -->
+
+        <!-- join volunters section -->
+        <section class="bg-white py-16">
+
+            <div class="container max-w-screen-xl mx-auto px-4">
+
+                <div class="w-full h-full bg-blue-500 rounded-2xl md:rounded-3xl relative lg:flex items-center">
+                    <div class="hidden lg:block">
+                        <img src="assets/image/humans.png" alt="Image" class="relative z-10">
+
+                        <img src="assets/image/pattern-2.png" alt="Image" class="absolute top-14 left-40">
+
+                        <img src="assets/image/pattern.png" alt="Image" class="absolute top-0 z-0">
+                    </div>
+
+                    <div class="lg:relative py-4 lg:py-0">
+                        <h1 class="font-semibold text-white text-xl md:text-4xl text-center lg:text-left leading-normal md:mb-5 lg:mb-10">¿Quieres aportar a New Begginigs?<br> ¡Déjanos tu correo!</h1>
+
+                        <div class="hidden md:block flex items-center text-center lg:text-left space-x-5">
+                            <input type="text" placeholder="Email" class="px-4 py-4 w-96 bg-gray-50 placeholder-gray-400 rounded-xl outline-none">
+
+                            <button class="px-6 py-4 font-semibold bg-gray-50 text-info text-lg rounded-xl hover:bg-blue-600 hover:text-white transition ease-in-out duration-500">Enviar</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- container.// -->
+
+        </section>
+        <!-- join volunters section //end -->
+
+        <footer class="bg-white py-16">
+
+            <div class="container max-w-screen-xl mx-auto px-4">
+                <div class="flex flex-col lg:flex-row lg:justify-between">
+
+                    <div class="space-y-7 mb-10 lg:mb-0">
+                        <div class="flex justify-center lg:justify-start">
+                            <img src="assets/image/navbar-logo3.png" alt="Image">
+                        </div>
+                        
+                        <p class="font-light text-gray-400 text-md md:text-lg text-center lg:text-left">Encuentranos en nuestras <br> redes sociales</p>
+
+                        <div class="flex items-center justify-center lg:justify-start space-x-5">
+                            <a href="#" class="px-3 py-3 bg-gray-200 text-gray-700 rounded-full hover:bg-info hover:text-white transition ease-in-out duration-500">
+                                <i data-feather="facebook"></i>
+                            </a>
+
+                            <a href="#" class="px-3 py-3 bg-gray-200 text-gray-700 rounded-full hover:bg-info hover:text-white transition ease-in-out duration-500">
+                                <i data-feather="twitter"></i>
+                            </a>
+
+                            <a href="#" class="px-3 py-3 bg-gray-200 text-gray-700 rounded-full hover:bg-info hover:text-white transition ease-in-out duration-500">
+                                <i data-feather="linkedin"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="text-center lg:text-left space-y-7 mb-10 lg:mb-0">
+                        <h4 class="font-semibold text-gray-900 text-lg md:text-2xl">Fundaciones asociadas</h4>
+
+                        <a href="#" class="block font-light text-gray-400 text-sm md:text-lg hover:text-gray-800 transition ease-in-out duration-300">Charity Ratings</a>
+
+                        <a href="#" class="block font-light text-gray-400 text-sm md:text-lg hover:text-gray-800 transition ease-in-out duration-300">Top-Rated Charities</a>
+
+                        <a href="#" class="block font-light text-gray-400 text-sm md:text-lg hover:text-gray-800 transition ease-in-out duration-300">Top Compensation</a>
+
+                        <a href="#" class="block font-light text-gray-400 text-sm md:text-lg hover:text-gray-800 transition ease-in-out duration-300">High Asset Charities</a>
+                    </div>
+
+                    <div class="text-center lg:text-left space-y-7 mb-10 lg:mb-0">
+                        <h4 class="font-semibold text-gray-900 text-lg md:text-2xl">Nosotros</h4>
+
+                        <a href="#" class="block font-light text-gray-400 text-sm md:text-lg hover:text-gray-800 transition ease-in-out duration-300">About Us</a>
+
+                        <a href="#" class="block font-light text-gray-400 text-sm md:text-lg hover:text-gray-800 transition ease-in-out duration-300">Journalists / Media</a>
+
+                        <a href="#" class="block font-light text-gray-400 text-sm md:text-lg hover:text-gray-800 transition ease-in-out duration-300">Membership</a>
+
+                        <a href="#" class="block font-light text-gray-400 text-sm md:text-lg hover:text-gray-800 transition ease-in-out duration-300">Blog</a>
+                    </div>
+
+                    <div class="text-center lg:text-left space-y-7 mb-10 lg:mb-0">
+                        <h4 class="font-semibold text-gray-900 text-lg md:text-2xl">Legal</h4>
+
+                        <a href="#" class="block font-light text-gray-400 text-sm md:text-lg hover:text-gray-800 transition ease-in-out duration-300">FAQ</a>
+
+                        <a href="#" class="block font-light text-gray-400 text-sm md:text-lg hover:text-gray-800 transition ease-in-out duration-300">Terms & Conditions</a>
+                    </div>
+
+                </div>
+            </div> <!-- container.// -->
+
+        </footer>
+
+        <script>
+            feather.replace()
+        </script>
+
+    </body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Ayuda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white">
+    <div class="container mx-auto px-4 py-8">
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center">
+                <a href="index.html">
+                    <img src="assets/image/navbar-Logo3.png" alt="New Beginnings Logo" class="mr-2">
+                </a>
+            </div>
+            <div class="flex gap-2">
+                <button class="px-4 py-2 border border-blue-600 text-blue-600 rounded-md">¿Quieres donar?</button>
+                <!--button class="px-4 py-2 bg-blue-600 text-white rounded-md">Regístrate</button-->
+            </div>
+        </header>
+
+        <main class="grid md:grid-cols-2 gap-8 items-start">
+            <div>
+                <h1 class="text-2xl font-bold mb-4">Cuéntanos tu historia</h1>
+                <p class="text-sm text-gray-600 mb-6">
+                    Completa este formulario para que podamos conocerte mejor y ayudarte en tu camino. Estamos aquí para
+                    apoyarte.
+                </p>
+
+                <form class="space-y-6">
+                    <!-- Nombre completo -->
+                    <div class="space-y-2">
+                        <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre completo</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="Escribe tu nombre completo" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Tipo de identificación -->
+                    <div class="space-y-2">
+                        <label for="tipo-id" class="block text-sm font-medium text-gray-700">Tipo de identificación</label>
+                        <div class="relative">
+                            <select id="tipo-id" name="tipo-id" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 appearance-none">
+                                <option value="" disabled selected>Selecciona tipo de identificación</option>
+                                <option value="cedula">Cédula de Ciudadanía</option>
+                                <option value="tarjeta">Tarjeta de Identidad</option>
+                                <option value="pasaporte">Pasaporte</option>
+                                <option value="extranjeria">Cédula de Extranjería</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Número de identificación -->
+                    <div class="space-y-2">
+                        <label for="numero-id" class="block text-sm font-medium text-gray-700">Número de identificación</label>
+                        <input type="text" id="numero-id" name="numero-id" placeholder="Escribe tu número de identificación" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Género -->
+                    <div class="space-y-2">
+                        <label for="genero" class="block text-sm font-medium text-gray-700">Género</label>
+                        <div class="relative">
+                            <select id="genero" name="genero" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 appearance-none">
+                                <option value="" disabled selected>Selecciona tu género</option>
+                                <option value="hombre">Hombre</option>
+                                <option value="mujer">Mujer</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Teléfono -->
+                    <div class="space-y-2">
+                        <label for="telefono" class="block text-sm font-medium text-gray-700">Teléfono</label>
+                        <input type="tel" id="telefono" name="telefono" placeholder="Escribe tu número de teléfono" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Situación -->
+                    <div class="space-y-2">
+                        <label for="situacion" class="block text-sm font-medium text-gray-700">Situación</label>
+                        <div class="relative">
+                            <select id="situacion" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 appearance-none">
+                                <option value="" disabled selected>Selecciona tu situación</option>
+                                <!-- Las opciones se cargarán dinámicamente aquí -->
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón de envío -->
+                    <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        ¡Vamos!
+                    </button>
+                </form>
+            </div>
+
+            <div class="hidden md:block">
+                <img src="assets/image/ayuda.jpg" alt="Ilustración de apoyo" class="mx-auto">
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/JS/formulario.js"></script>
+</body>
+</html>
