@@ -26,6 +26,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Cargar situaciones
     await cargarOpciones('/api/situaciones', 'situacion');
+
+    // Cargar departamentos cuando se seleccione una situación
+    const situacionSelect = document.getElementById('situacion');
+    const departamentoSelect = document.getElementById('departamento');
+
+    situacionSelect.addEventListener('change', async () => {
+        // Habilitar el campo de departamentos
+        departamentoSelect.disabled = false;
+
+        // Limpiar opciones anteriores
+        departamentoSelect.innerHTML = '<option value="" disabled selected>Selecciona tu departamento</option>';
+
+        // Cargar departamentos (puedes ajustar la URL según tu backend)
+        await cargarOpciones('/api/departamentos', 'departamento');
+    });
 });
 
 // Enviar el formulario
@@ -43,6 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
             genero: document.querySelector('[name="genero"]').value,
             telefono: document.querySelector('[name="telefono"]').value,
             situacionId: document.querySelector('[name="situacionId"]').value,
+            departamento: document.querySelector('[name="departamento"]').value, // Agregar el ID del departamento
         };
 
         console.log('Datos enviados:', data); // Verificar los datos enviados
