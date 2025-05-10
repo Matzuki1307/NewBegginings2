@@ -69,6 +69,8 @@ hr {
   /* 1 */
   color: inherit;
   /* 2 */
+
+  border-top-width: 1px;
 }
 
 /*
@@ -101,7 +103,9 @@ strong {
 
 code,
 kbd,
-samp,
+samp {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
 pre {
   font-family:
 		ui-monospace,
@@ -158,6 +162,8 @@ table {
   /* 1 */
   border-color: inherit;
   /* 2 */
+
+  border-collapse: collapse;
 }
 
 /*
@@ -183,6 +189,12 @@ textarea {
   /* 1 */
   margin: 0;
   /* 2 */
+
+
+  padding: 0;
+  line-height: inherit;
+  color: inherit;
+
 }
 
 /**
@@ -222,6 +234,8 @@ Restore the focus styles unset by the previous rule.
 
 :-moz-focusring {
   outline: 1px dotted ButtonText;
+
+  outline: auto;
 }
 
 /**
@@ -359,23 +373,6 @@ ul {
   /* 2 */
 }
 
-/*
- * Ensure horizontal rules are visible by default
- */
-
-hr {
-  border-top-width: 1px;
-}
-
-/**
- * Undo the `border-style: none` reset that Normalize applies to images so that
- * our `border-{width}` utilities have the expected effect.
- *
- * The Normalize reset is unnecessary for us since we default the border-width
- * to 0 on all elements.
- *
- * https://github.com/tailwindcss/tailwindcss/issues/362
- */
 
 img {
   border-style: solid;
@@ -414,14 +411,6 @@ button,
  * outline in Firefox by default.
  */
 
-:-moz-focusring {
-  outline: auto;
-}
-
-table {
-  border-collapse: collapse;
-}
-
 h1,
 h2,
 h3,
@@ -450,15 +439,6 @@ a {
  * normalize.css.
  */
 
-button,
-input,
-optgroup,
-select,
-textarea {
-  padding: 0;
-  line-height: inherit;
-  color: inherit;
-}
 
 /**
  * Use the configured 'mono' font family for elements that
