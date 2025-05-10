@@ -21,17 +21,13 @@ app.get('/', (req, res) => {
 
 // Ruta para manejar el formulario
 app.post('/api/formulario', async (req, res) => {
-    console.log('Headers:', req.headers); // Verifica los encabezados de la solicitud
-    console.log('Datos recibidos en el backend:', req.body); // Verifica los datos recibidos
+    const { nombre, tipoId, numeroId, genero, telefono, situacionId, departamento } = req.body;
 
-    const { nombre, tipoId, numeroId, genero, telefono, situacionId } = req.body;
-
-    if (!nombre || !tipoId || !numeroId || !genero || !telefono || !situacionId) {
+    if (!nombre || !tipoId || !numeroId || !genero || !telefono || !situacionId || !departamento) {
         return res.status(400).send('Todos los campos son obligatorios.');
     }
 
     try {
-        // Conectar a la base de datos
         const pool = await sql.connect(Config);
         await pool.request()
             .input('nombre', sql.NVarChar, nombre)
@@ -39,10 +35,11 @@ app.post('/api/formulario', async (req, res) => {
             .input('numeroId', sql.NVarChar, numeroId)
             .input('genero', sql.NVarChar, genero)
             .input('telefono', sql.NVarChar, telefono)
-            .input('situacionId', sql.Int, situacionId) // Guardar el ID de la situación
+            .input('situacionId', sql.Int, situacionId)
+            .input('departamento', sql.Int, departamento) // Agregar el departamento
             .query(`
-                INSERT INTO Formulario (Nombre, TipoId, NumeroId, Genero, Telefono, SituacionId)
-                VALUES (@nombre, @tipoId, @numeroId, @genero, @telefono, @situacionId)
+                INSERT INTO Formulario (Nombre, TipoId, NumeroId, Genero, Telefono, SituacionId, DepartamentoId)
+                VALUES (@nombre, @tipoId, @numeroId, @genero, @telefono, @situacionId, @departamento)
             `);
 
         res.status(200).send('Formulario enviado con éxito.');
@@ -85,6 +82,18 @@ app.get('/api/situaciones', async (req, res) => {
     } catch (error) {
         console.error('Error al obtener las situaciones:', error);
         res.status(500).send('Error al obtener las situaciones.');
+    }
+});
+
+// Ruta para obtener los departamentos
+app.get('/api/departamentos', async (req, res) => {
+    try {
+        const pool = await sql.connect(Config);
+        const result = await pool.request().query('SELECT Id, Nombre AS Descripcion FROM Departamentos ORDER BY Nombre');
+        res.status(200).json(result.recordset);
+    } catch (error) {
+        console.error('Error al obtener los departamentos:', error);
+        res.status(500).send('Error al obtener los departamentos.');
     }
 });
 
