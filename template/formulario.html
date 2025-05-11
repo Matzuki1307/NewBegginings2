@@ -35,6 +35,17 @@
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
                     </div>
 
+                    <!-- Género -->
+                    <div class="space-y-2">
+                        <label for="genero" class="block text-sm font-medium text-gray-700">Género</label>
+                        <div class="relative">
+                            <select id="genero" name="genero" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                                <option value="" disabled selected>Selecciona tu género</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <!-- Tipo de identificación -->
                     <div class="space-y-2">
                         <label for="tipo-id" class="block text-sm font-medium text-gray-700">Tipo de identificación</label>
@@ -51,17 +62,6 @@
                         <label for="numero-id" class="block text-sm font-medium text-gray-700">Número de identificación</label>
                         <input type="text" id="numero-id" name="numeroId" placeholder="Número de Identificación" 
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
-                    </div>
-
-                    <!-- Género -->
-                    <div class="space-y-2">
-                        <label for="genero" class="block text-sm font-medium text-gray-700">Género</label>
-                        <div class="relative">
-                            <select id="genero" name="genero" 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
-                                <option value="" disabled selected>Selecciona tu género</option>
-                            </select>
-                        </div>
                     </div>
 
                     <!-- Teléfono -->
@@ -90,6 +90,25 @@
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" disabled required>
                                 <option value="" disabled selected>Selecciona tu departamento</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <!-- Campos adicionales para Desplazamiento forzado -->
+                    <div id="campos-adicionales" class="space-y-2 hidden">
+                        <!-- Unidad de medida -->
+                        <div class="space-y-2">
+                            <label for="unidad-medida" class="block text-sm font-medium text-gray-700">Unidad de medida</label>
+                            <select id="unidad-medida" name="unidadMedida" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                <option value="" disabled selected>Selecciona la unidad de medida</option>
+                            </select>
+                        </div>
+
+                        <!-- Cantidad -->
+                        <div class="space-y-2">
+                            <label for="cantidad" class="block text-sm font-medium text-gray-700">Cantidad</label>
+                            <input type="number" id="cantidad" name="cantidad" placeholder="Cantidad" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                         </div>
                     </div>
 

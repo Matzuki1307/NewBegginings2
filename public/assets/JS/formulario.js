@@ -4,13 +4,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function cargarOpciones(url, selectId) {
         try {
             const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`Error al cargar las opciones: ${response.statusText}`);
+            }
+
             const data = await response.json();
             const select = document.getElementById(selectId);
 
             data.forEach(item => {
                 const option = document.createElement('option');
                 option.value = item.Id; // Guardar el ID
-                option.textContent = item.Descripcion || item.Situacion; // Mostrar la descripción o situación
+                option.textContent = item.Situacion || item.Descripcion; // Mostrar la descripción o situación
                 select.appendChild(option);
             });
         } catch (error) {
@@ -24,22 +29,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Cargar tipos de identificación
     await cargarOpciones('/api/tipos-id', 'tipo-id');
 
+    // Cargar departamentos
+    await cargarOpciones('/api/departamentos', 'departamento');
+
+    // Habilitar el campo "Departamento" cuando se carguen las opciones
+    const departamentoSelect = document.getElementById('departamento');
+    departamentoSelect.disabled = false;
+
     // Cargar situaciones
     await cargarOpciones('/api/situaciones', 'situacion');
 
-    // Cargar departamentos cuando se seleccione una situación
+    // Cargar unidades de medida
+    await cargarOpciones('/api/unidades-medida', 'unidad-medida');
+
+    // Mostrar campos adicionales si la situación es "Desplazamiento forzado"
     const situacionSelect = document.getElementById('situacion');
-    const departamentoSelect = document.getElementById('departamento');
+    const camposAdicionales = document.getElementById('campos-adicionales');
 
-    situacionSelect.addEventListener('change', async () => {
-        // Habilitar el campo de departamentos
-        departamentoSelect.disabled = false;
+    situacionSelect.addEventListener('change', () => {
+        const seleccion = situacionSelect.options[situacionSelect.selectedIndex].text;
 
-        // Limpiar opciones anteriores
-        departamentoSelect.innerHTML = '<option value="" disabled selected>Selecciona tu departamento</option>';
-
-        // Cargar departamentos (puedes ajustar la URL según tu backend)
-        await cargarOpciones('/api/departamentos', 'departamento');
+        if (seleccion === 'Desplazamiento forzado') {
+            camposAdicionales.classList.remove('hidden');
+        } else {
+            camposAdicionales.classList.add('hidden');
+        }
     });
 });
 
@@ -52,13 +66,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Recopilar los datos del formulario manualmente
         const data = {
-            nombre: document.querySelector('[name="nombre"]').value,
-            tipoId: document.querySelector('[name="tipoId"]').value,
-            numeroId: document.querySelector('[name="numeroId"]').value,
-            genero: document.querySelector('[name="genero"]').value,
-            telefono: document.querySelector('[name="telefono"]').value,
-            situacionId: document.querySelector('[name="situacionId"]').value,
-            departamento: document.querySelector('[name="departamento"]').value, // Agregar el ID del departamento
+            nombre: document.getElementById('nombre').value,
+            tipoId: document.getElementById('tipo-id').value,
+            numeroId: document.getElementById('numero-id').value,
+            genero: document.getElementById('genero').value,
+            telefono: document.getElementById('telefono').value,
+            situacionId: document.getElementById('situacion').value,
+            departamento: document.getElementById('departamento').value,
+            unidadMedida: document.getElementById('unidad-medida').value || null,
+            cantidad: document.getElementById('cantidad').value || null
         };
 
         console.log('Datos enviados:', data); // Verificar los datos enviados
@@ -73,13 +89,14 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (response.ok) {
-                window.location.href = 'exito.html'; // Redirigir a exito.html si el envío es exitoso
+                alert('Formulario enviado con éxito.');
+                window.location.href = 'ticket.html'; // Redirige a ticket.html
             } else {
-                alert('Hubo un error al enviar el formulario.');
+                alert('Error al enviar el formulario.');
             }
         } catch (error) {
             console.error('Error al enviar el formulario:', error);
-            alert('No se pudo enviar el formulario.');
+            alert('Ocurrió un error al procesar el formulario.');
         }
     });
 });

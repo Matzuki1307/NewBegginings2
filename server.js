@@ -21,7 +21,7 @@ app.get('/', (req, res) => {
 
 // Ruta para manejar el formulario
 app.post('/api/formulario', async (req, res) => {
-    const { nombre, tipoId, numeroId, genero, telefono, situacionId, departamento } = req.body;
+    const { nombre, tipoId, numeroId, genero, telefono, situacionId, departamento, unidadMedida, cantidad } = req.body;
 
     if (!nombre || !tipoId || !numeroId || !genero || !telefono || !situacionId || !departamento) {
         return res.status(400).send('Todos los campos son obligatorios.');
@@ -36,10 +36,12 @@ app.post('/api/formulario', async (req, res) => {
             .input('genero', sql.NVarChar, genero)
             .input('telefono', sql.NVarChar, telefono)
             .input('situacionId', sql.Int, situacionId)
-            .input('departamento', sql.Int, departamento) // Agregar el departamento
+            .input('departamento', sql.Int, departamento)
+            .input('unidadMedida', sql.NVarChar, unidadMedida || null) // Permitir nulo si no aplica
+            .input('cantidad', sql.Int, cantidad || null) // Permitir nulo si no aplica
             .query(`
-                INSERT INTO Formulario (Nombre, TipoId, NumeroId, Genero, Telefono, SituacionId, DepartamentoId)
-                VALUES (@nombre, @tipoId, @numeroId, @genero, @telefono, @situacionId, @departamento)
+                INSERT INTO Formulario (Nombre, TipoId, NumeroId, Genero, Telefono, SituacionId, DepartamentoId, UnidadMedida, Cantidad)
+                VALUES (@nombre, @tipoId, @numeroId, @genero, @telefono, @situacionId, @departamento, @unidadMedida, @cantidad)
             `);
 
         res.status(200).send('Formulario enviado con éxito.');
@@ -78,7 +80,7 @@ app.get('/api/situaciones', async (req, res) => {
     try {
         const pool = await sql.connect(Config);
         const result = await pool.request().query('SELECT Id, Situacion FROM Situacion ORDER BY Id');
-        res.status(200).json(result.recordset);
+        res.status(200).json(result.recordset); // Devuelve las situaciones como JSON
     } catch (error) {
         console.error('Error al obtener las situaciones:', error);
         res.status(500).send('Error al obtener las situaciones.');
@@ -94,6 +96,18 @@ app.get('/api/departamentos', async (req, res) => {
     } catch (error) {
         console.error('Error al obtener los departamentos:', error);
         res.status(500).send('Error al obtener los departamentos.');
+    }
+});
+
+// Ruta para obtener las unidades de medida
+app.get('/api/unidades-medida', async (req, res) => {
+    try {
+        const pool = await sql.connect(Config);
+        const result = await pool.request().query('SELECT Id, Nombre AS Descripcion FROM UnidadesMedida ORDER BY Nombre');
+        res.status(200).json(result.recordset); // Devuelve las unidades de medida como JSON
+    } catch (error) {
+        console.error('Error al obtener las unidades de medida:', error);
+        res.status(500).send('Error al obtener las unidades de medida.');
     }
 });
 
