@@ -24,15 +24,12 @@
         <!-- Header -->
         <header class="flex justify-between items-center mb-12">
             <div>
-                <a href="#" class="flex items-center">
-                    <svg class="h-10 w-10 text-primary" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/>
-                    </svg>
-                    <span class="ml-2 text-primary font-bold text-xl">New Beginnings</span>
+                <a href="/" class="flex items-center">
+                    <img src="assets/image/navbar-Logo3.png" alt="Logo">
                 </a>
             </div>
-            <a href="#" class="px-6 py-2 border border-primary text-primary rounded-full hover:bg-blue-50 transition-colors">
-                ¿Quieres donar?
+            <a href="/validar" class="px-6 py-2 border border-primary text-primary rounded-full hover:bg-blue-50 transition-colors">
+                Revisa tus tickets!
             </a>
         </header>
 
@@ -65,7 +62,7 @@
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600">Estado:</span>
-                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm font-medium">Pendiente</span>
+                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm font-medium" id="ticket-status">Pendiente</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600">Tiempo estimado de respuesta:</span>
@@ -75,12 +72,12 @@
                 </div>
                 
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <a href="index.html" class="bg-primary hover:bg-primary-dark text-white py-3 px-8 rounded-md text-center transition-colors">
+                    <a href="/" class="bg-primary hover:bg-primary-dark text-white py-3 px-8 rounded-md text-center transition-colors">
                         Volver al inicio
                     </a>
-                    <button id="download-btn" class="bg-white border border-gray-300 text-gray-700 py-3 px-8 rounded-md hover:bg-gray-50 text-center transition-colors">
-                        Descargar comprobante
-                    </button>
+                    <a href="/validar" class="bg-white border border-gray-300 text-gray-700 py-3 px-8 rounded-md hover:bg-gray-50 text-center transition-colors">
+                        Ver mis tickets
+                    </a>
                 </div>
             </div>
             
@@ -128,62 +125,48 @@
                     </div>
                     <h3 class="font-bold text-lg mb-2">¿Tienes preguntas?</h3>
                     <p class="text-gray-600">
-                        Puedes contactarnos al <span class="text-primary">support@newbeginnings.org</span> o llamar al <span class="text-primary">+57 (1) 234-5678</span>
+                        Puedes contactarnos al <span class="text-primary">support@newbeginnings.org</span> o llamar al <span class="text-primary">+57 3213350550</span>
                     </p>
                 </div>
             </div>
         </section>
 
-        <!-- Resources Section -->
-        <section>
-            <h2 class="text-center text-3xl font-bold text-text-dark mb-2">
-                Recursos disponibles
-            </h2>
-            <p class="text-center text-gray-600 mb-8">
-                Mientras esperas, puedes consultar estas entidades que pueden ayudarte
-            </p>
-            
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="bg-blue-50 rounded-lg p-6 text-center">
-                    <img src="assets/image/DefensoriaPueblo.png" alt="Defensoría del pueblo" class="mx-auto mb-4">
-                    <h3 class="font-bold text-lg mb-2">Defensoría del pueblo</h3>
-                    <a href="https://www.defensoria.gov.co/web/guest/directorio-de-dependencias" class="text-primary hover:underline">Visitar sitio web</a>
-                </div>
-                
-                <div class="bg-blue-50 rounded-lg p-6 text-center">
-                    <img src="assets/image/lineapurpura.png" alt="Línea púrpura" class="mx-auto mb-4">
-                    <h3 class="font-bold text-lg mb-2">Línea púrpura</h3>
-                    <a href="https://www.sdmujer.gov.co/lineapurpura" class="text-primary hover:underline">Visitar sitio web</a>
-                </div>
-                
-                <div class="bg-blue-50 rounded-lg p-6 text-center">
-                    <img src="assets/image/icbf.png" alt="ICBF" class="mx-auto mb-4">
-                    <h3 class="font-bold text-lg mb-2">ICBF</h3>
-                    <a href="https://www.icbf.gov.co/puntos-atencion" class="text-primary hover:underline">Visitar sitio web</a>
-                </div>
-            </div>
-        </section>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Generar número de ticket aleatorio
-            const ticketNumber = 'T-' + Math.floor(10000 + Math.random() * 90000);
-            document.getElementById('ticket-number').textContent = ticketNumber;
-            
-            // Establecer la fecha actual
-            const now = new Date();
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            const formattedDate = now.toLocaleDateString('es-ES', options);
-            document.getElementById('creation-date').textContent = formattedDate;
-            
-            // Manejar el botón de descarga
-            document.getElementById('download-btn').addEventListener('click', function() {
-                // Aquí puedes implementar la lógica para generar y descargar un PDF
-                // Por ahora, solo mostramos un mensaje
-                alert('El comprobante se descargará en breve. Esta función estará disponible próximamente.');
-            });
-        });
-    </script>
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const response = await fetch('/api/ticket');
+        if (!response.ok) throw new Error('No hay ticket disponible');
+        const ticket = await response.json();
+
+        // Usa los nombres reales de los campos
+        document.getElementById('ticket-number').textContent = 'T-' + (ticket.Id || ticket.id || '-');
+        // Formatea la fecha a español
+        const fecha = new Date(ticket.FechaCreacion || ticket.fecha);
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('creation-date').textContent = isNaN(fecha) ? '-' : fecha.toLocaleDateString('es-ES', options);
+
+        // Estado real y color
+        const estadoSpan = document.getElementById('ticket-status');
+        const estado = (ticket.Estado || ticket.estado || '').toLowerCase();
+        estadoSpan.textContent = ticket.Estado || ticket.estado || 'No disponible';
+        estadoSpan.className = 'px-2 py-1 rounded text-sm font-medium ';
+        if (estado === 'pendiente' || estado === 'abierto') {
+            estadoSpan.className += 'bg-blue-100 text-blue-800';
+        } else if (estado === 'resuelto' || estado === 'cerrado') {
+            estadoSpan.className += 'bg-green-100 text-green-800';
+        } else {
+            estadoSpan.className += 'bg-gray-100 text-gray-800';
+        }
+    } catch (err) {
+        document.getElementById('ticket-number').textContent = '-';
+        document.getElementById('creation-date').textContent = '-';
+        const estadoSpan = document.getElementById('ticket-status');
+        estadoSpan.textContent = 'No disponible';
+        estadoSpan.className = 'px-2 py-1 rounded text-sm font-medium bg-gray-100 text-gray-800';
+    }
+});
+</script>
 </body>
 </html>

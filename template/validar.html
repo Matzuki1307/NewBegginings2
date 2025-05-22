@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Tickets - New Beginnings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: 'oklch(54.6% 0.245 262.881)',
+            'primary-light': 'oklch(84.6% 0.12 262.881)',
+            'primary-dark': 'oklch(44.6% 0.245 262.881)',
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Iconos de Heroicons (incluidos en línea para simplicidad) -->
+  <style>
+    .ticket-details {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    
+    .ticket-details.open {
+      max-height: 500px;
+    }
+    
+    .rotate-icon {
+      transition: transform 0.3s ease;
+    }
+    
+    .rotate-icon.open {
+      transform: rotate(180deg);
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
+  <header class="bg-white shadow-sm">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center">
+        <!-- Aquí puedes colocar tu imagen del logo -->
+        <a href="/" class="flex items-center">
+                    <img src="assets/image/navbar-Logo3.png" alt="Logo">
+        </a>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span class="text-gray-700">Bienvenido, Usuario</span>
+        <div class="relative">
+          <button id="userMenuButton" class="flex items-center focus:outline-none">
+            <div class="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center">
+              <span class="text-sm font-medium">US</span>
+            </div>
+          </button>
+          <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden">
+            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mi perfil</a>
+            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Configuración</a>
+            <div class="border-t border-gray-100"></div>
+            <a href="login.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cerrar sesión</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container mx-auto px-4 py-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+      <h1 class="text-2xl font-bold text-gray-900 mb-4 md:mb-0">Gestión de Tickets</h1>
+      <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+        <a href="/formulario" class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-md transition duration-300 text-center">
+          Crear nuevo ticket
+        </a>
+      </div>
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+      <div class="flex flex-col md:flex-row md:items-end space-y-4 md:space-y-0 md:space-x-4">
+        <div class="flex-grow">
+          <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Buscar tickets</label>
+          <div class="relative">
+            <input type="text" id="search" name="search" placeholder="Buscar por nombre, email o descripción..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="w-full md:w-48">
+          <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+          <select id="status" name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+            <option value="">Todos</option>
+            <option value="nuevo">Nuevo</option>
+            <option value="en-proceso">En proceso</option>
+            <option value="resuelto">Resuelto</option>
+            <option value="cerrado">Cerrado</option>
+          </select>
+        </div>
+        <div class="w-full md:w-48">
+          <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+          <select id="date" name="date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+            <option value="">Todas las fechas</option>
+            <option value="today">Hoy</option>
+            <option value="week">Esta semana</option>
+            <option value="month">Este mes</option>
+            <option value="year">Este año</option>
+          </select>
+        </div>
+        <button id="applyFilters" class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-md transition duration-300">
+          Aplicar filtros
+        </button>
+      </div>
+    </div>
+
+    <!-- Lista de tickets -->
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <!-- Encabezado de la tabla -->
+          <thead class="bg-gray-50">
+  <tr>
+    <th>ID</th>
+    <th>Solicitante</th>
+    <th>Correo</th>
+    <th>Situación</th>
+    <th>Estado</th>
+    <th>Fecha</th>
+    <th>Encuesta</th> <!-- Nueva columna -->
+  </tr>
+</thead>
+          <tbody class="bg-white divide-y divide-gray-200" id="ticketsTable">
+            <!-- Los tickets se cargarán aquí dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Paginación -->
+      <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <div class="flex-1 flex justify-between sm:hidden">
+          <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Anterior
+          </button>
+          <button class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Siguiente
+          </button>
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm text-gray-700">
+              Mostrando <span class="font-medium">1</span> a <span class="font-medium">10</span> de <span class="font-medium">23</span> resultados
+            </p>
+          </div>
+          <div>
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">Anterior</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                1
+              </button>
+              <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-primary text-sm font-medium text-white">
+                2
+              </button>
+              <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                3
+              </button>
+              <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                ...
+              </span>
+              <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                8
+              </button>
+              <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                9
+              </button>
+              <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">Siguiente</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="mt-auto bg-white border-t border-gray-200 py-6">
+    <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+      &copy; 2025 New Beginnings. Todos los derechos reservados.
+    </div>
+  </footer>
+
+  <!-- Modal de detalles del ticket -->
+  <div id="ticketModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+        <h3 class="text-lg font-medium text-gray-900">Detalles del Ticket</h3>
+        <button id="closeModal" class="text-gray-400 hover:text-gray-500">
+          <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="px-6 py-4" id="modalContent">
+        <!-- El contenido del modal se cargará dinámicamente -->
+      </div>
+      <div class="bg-gray-50 px-6 py-4 flex justify-end">
+        <button id="closeModalButton" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md transition duration-300 mr-2">
+          Cerrar
+        </button>
+        <button class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-md transition duration-300">
+          Actualizar estado
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Mostrar el nombre real del usuario
+      try {
+        const userRes = await fetch('/api/usuario');
+        if (userRes.status === 401) {
+          window.location.href = '/login?redirect=/validar';
+          return;
+        }
+        const userData = await userRes.json();
+        document.querySelector('span.text-gray-700').textContent = `Bienvenido, ${userData.nombre}`;
+      } catch (e) {
+        window.location.href = '/login?redirect=/validar';
+        return;
+      }
+
+      // Consultar los tickets del usuario logueado
+      let tickets = [];
+      try {
+        const res = await fetch('/api/mis-tickets');
+        if (res.status === 401) {
+          window.location.href = '/login?redirect=/validar';
+          return;
+        }
+        tickets = await res.json();
+      } catch (e) {
+        document.getElementById('ticketsTable').innerHTML = `
+          <tr><td colspan="6" class="text-center text-red-600 py-6">No se pudieron cargar los tickets o no tienes tickets registrados.</td></tr>
+        `;
+        return;
+      }
+
+      // Función para traducir y colorear el estado
+      function estadoTextoYColor(estado) {
+        switch (estado.toLowerCase()) {
+          case 'pendiente':
+            return { texto: 'Pendiente', color: 'bg-blue-100 text-blue-800' };
+          case 'resuelto':
+            return { texto: 'Resuelto', color: 'bg-green-100 text-green-800' };
+          default:
+            return { texto: estado, color: 'bg-gray-100 text-gray-800' };
+        }
+      }
+
+      // Renderizar tickets
+      function renderTickets(ticketsToRender) {
+        const tableBody = document.getElementById('ticketsTable');
+        tableBody.innerHTML = '';
+
+        if (ticketsToRender.length === 0) {
+          tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-6">No tienes tickets registrados.</td></tr>`;
+          return;
+        }
+
+        ticketsToRender.forEach(ticket => {
+          const estado = estadoTextoYColor(ticket.Estado);
+          const fecha = new Date(ticket.FechaCreacion);
+          const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+
+          // Botón solo si está resuelto
+          let encuestaBtn = '';
+          if (ticket.Estado && ticket.Estado.toLowerCase() === 'resuelto') {
+            encuestaBtn = `<button onclick="window.location.href='/satisfaccion'" class="bg-primary hover:bg-primary-dark text-white px-3 py-1 rounded text-xs transition-colors">Evaluar atención</button>`;
+          }
+
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-gray-50';
+          row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">T-${ticket.Id}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm font-medium text-gray-900">${ticket.Nombre || ''}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-900">${ticket.Email || ''}</div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="text-sm text-gray-900">${ticket.Situacion || '-'}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${estado.color}">
+                ${estado.texto}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${fechaFormateada}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-center">${encuestaBtn}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+
+        // Agrega eventos a los botones de ver detalles si lo necesitas
+        // ...
+      }
+
+      // Inicializar la tabla con todos los tickets del usuario
+      renderTickets(tickets);
+
+      // Puedes agregar aquí la lógica de filtros si lo deseas, usando el array "tickets"
+    });
+  </script>
+</body>
+</html>

@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (response.ok) {
                 alert('Formulario enviado con éxito.');
-                window.location.href = 'ticket.html'; // Redirige a ticket.html
+                window.location.href = '/ticket'; // Redirige a ticket.html
             } else {
                 alert('Error al enviar el formulario.');
             }

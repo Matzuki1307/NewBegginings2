@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Encuesta de Satisfacción - New Beginnings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: 'oklch(54.6% 0.245 262.881)',
+            'primary-light': 'oklch(84.6% 0.12 262.881)',
+            'primary-dark': 'oklch(44.6% 0.245 262.881)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Estilos para las estrellas de valoración */
+    .rating {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: flex-end;
+    }
+    
+    .rating > input {
+      display: none;
+    }
+    
+    .rating > label {
+      position: relative;
+      width: 1.5em;
+      font-size: 2rem;
+      color: #ccc;
+      cursor: pointer;
+    }
+    
+    .rating > label::before {
+      content: "★";
+      position: absolute;
+      opacity: 0;
+    }
+    
+    .rating > label:hover:before,
+    .rating > label:hover ~ label:before {
+      opacity: 1 !important;
+    }
+    
+    .rating > input:checked ~ label:before {
+      opacity: 1;
+    }
+    
+    .rating:hover > input:checked ~ label:before {
+      opacity: 0.4;
+    }
+    
+    .rating > label:before {
+      color: oklch(54.6% 0.245 262.881);
+    }
+    
+    /* Estilos para los emojis de satisfacción */
+    .satisfaction-emoji {
+      font-size: 2rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .satisfaction-emoji:hover {
+      transform: scale(1.2);
+    }
+    
+    .satisfaction-option input:checked + .satisfaction-emoji {
+      transform: scale(1.2);
+    }
+    
+    /* Estilos para el progreso */
+    .progress-bar {
+      height: 8px;
+      background-color: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .progress-value {
+      height: 100%;
+      background-color: oklch(54.6% 0.245 262.881);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
+  <header class="bg-white shadow-sm">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center">
+        <!-- Aquí puedes colocar tu imagen del logo -->
+        <img src="assets/image/navbar-Logo3.png" alt="New Beginnings Logo" class="h-12">
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
+      <div class="bg-primary py-6 px-6">
+        <h1 class="text-2xl font-bold text-white text-center">Tu opinión es importante</h1>
+        <p class="text-white text-center mt-2">Ayúdanos a mejorar nuestros servicios completando esta breve encuesta</p>
+      </div>
+      
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+          <div class="text-sm font-medium text-gray-700">Progreso</div>
+          <div class="text-sm text-gray-500">Página <span id="currentPage">1</span> de 3</div>
+        </div>
+        
+        <div class="progress-bar mb-8">
+          <div class="progress-value" id="progressBar" style="width: 33%;"></div>
+        </div>
+        
+        <form id="surveyForm">
+          <!-- Página 1: Información general -->
+          <div id="page1" class="survey-page">
+            <div class="mb-8">
+              <h2 class="text-xl font-semibold text-gray-800 mb-4">Información general</h2>
+              
+              <div class="space-y-6">
+                <div class="space-y-2">
+                  <label for="serviceType" class="block text-sm font-medium text-gray-700">¿Qué servicio utilizaste?</label>
+                  <select id="serviceType" name="serviceType" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                    <option value="">Selecciona una opción</option>
+                    <option value="orientacion">Orientación y asesoramiento</option>
+                    <option value="recursos">Acceso a recursos</option>
+                    <option value="apoyo">Apoyo emocional</option>
+                    <option value="capacitacion">Capacitación profesional</option>
+                    <option value="vivienda">Asistencia para vivienda</option>
+                    <option value="legal">Asesoramiento legal</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </div>
+                
+                <div class="space-y-2">
+                  <label for="otherService" class="block text-sm font-medium text-gray-700">Si seleccionaste "Otro", por favor especifica:</label>
+                  <input type="text" id="otherService" name="otherService" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+                
+                <div class="space-y-2">
+                  <label for="serviceDate" class="block text-sm font-medium text-gray-700">¿Cuándo utilizaste nuestro servicio?</label>
+                  <input type="date" id="serviceDate" name="serviceDate" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                </div>
+                
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-gray-700">¿Cómo nos conociste?</label>
+                  <div class="space-y-2">
+                    <div class="flex items-center">
+                      <input id="source1" name="source" type="radio" value="recomendacion" class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                      <label for="source1" class="ml-2 block text-sm text-gray-700">Recomendación de un amigo o familiar</label>
+                    </div>
+                    <div class="flex items-center">
+                      <input id="source2" name="source" type="radio" value="redes" class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                      <label for="source2" class="ml-2 block text-sm text-gray-700">Redes sociales</label>
+                    </div>
+                    <div class="flex items-center">
+                      <input id="source3" name="source" type="radio" value="busqueda" class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                      <label for="source3" class="ml-2 block text-sm text-gray-700">Búsqueda en internet</label>
+                    </div>
+                    <div class="flex items-center">
+                      <input id="source4" name="source" type="radio" value="evento" class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                      <label for="source4" class="ml-2 block text-sm text-gray-700">Evento comunitario</label>
+                    </div>
+                    <div class="flex items-center">
+                      <input id="source5" name="source" type="radio" value="otro" class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                      <label for="source5" class="ml-2 block text-sm text-gray-700">Otro</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex justify-end">
+              <button type="button" id="nextToPage2" class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-6 rounded-md transition duration-300">
+                Siguiente
+              </button>
+            </div>
+          </div>
+          
+          <!-- Página 2: Evaluación del servicio -->
+          <div id="page2" class="survey-page hidden">
+            <div class="mb-8">
+              <h2 class="text-xl font-semibold text-gray-800 mb-4">Evaluación del servicio</h2>
+              
+              <div class="space-y-8">
+                <div class="space-y-3">
+                  <label class="block text-sm font-medium text-gray-700">¿Cómo calificarías tu experiencia general con nuestro servicio?</label>
+                  <!-- Sustituye tu bloque de estrellas por este -->
+                  <div class="flex items-center gap-1" id="starRating">
+                    <input type="hidden" name="rating" id="rating" value="0">
+                    <span class="star text-3xl cursor-pointer text-gray-300" data-value="1">&#9733;</span>
+                    <span class="star text-3xl cursor-pointer text-gray-300" data-value="2">&#9733;</span>
+                    <span class="star text-3xl cursor-pointer text-gray-300" data-value="3">&#9733;</span>
+                    <span class="star text-3xl cursor-pointer text-gray-300" data-value="4">&#9733;</span>
+                    <span class="star text-3xl cursor-pointer text-gray-300" data-value="5">&#9733;</span>
+                  </div>
+                </div>
+                
+                <div class="space-y-3">
+                  <label class="block text-sm font-medium text-gray-700">¿Qué tan satisfecho estás con la atención recibida?</label>
+                  <div class="flex justify-between items-center">
+                    <div class="satisfaction-option">
+                      <input type="radio" id="satisfaction1" name="satisfaction" value="1" class="hidden" />
+                      <label for="satisfaction1" class="satisfaction-emoji block text-center cursor-pointer">😞</label>
+                      <span class="block text-xs text-center mt-1">Muy insatisfecho</span>
+                    </div>
+                    <div class="satisfaction-option">
+                      <input type="radio" id="satisfaction2" name="satisfaction" value="2" class="hidden" />
+                      <label for="satisfaction2" class="satisfaction-emoji block text-center cursor-pointer">🙁</label>
+                      <span class="block text-xs text-center mt-1">Insatisfecho</span>
+                    </div>
+                    <div class="satisfaction-option">
+                      <input type="radio" id="satisfaction3" name="satisfaction" value="3" class="hidden" />
+                      <label for="satisfaction3" class="satisfaction-emoji block text-center cursor-pointer">😐</label>
+                      <span class="block text-xs text-center mt-1">Neutral</span>
+                    </div>
+                    <div class="satisfaction-option">
+                      <input type="radio" id="satisfaction4" name="satisfaction" value="4" class="hidden" />
+                      <label for="satisfaction4" class="satisfaction-emoji block text-center cursor-pointer">🙂</label>
+                      <span class="block text-xs text-center mt-1">Satisfecho</span>
+                    </div>
+                    <div class="satisfaction-option">
+                      <input type="radio" id="satisfaction5" name="satisfaction" value="5" class="hidden" />
+                      <label for="satisfaction5" class="satisfaction-emoji block text-center cursor-pointer">😄</label>
+                      <span class="block text-xs text-center mt-1">Muy satisfecho</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="space-y-4">
+                  <label class="block text-sm font-medium text-gray-700">Por favor, evalúa los siguientes aspectos:</label>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <label class="block text-sm text-gray-700">Rapidez en la atención</label>
+                      <div class="flex items-center">
+                        <span class="text-xs text-gray-500 mr-2">Deficiente</span>
+                        <input type="range" min="1" max="5" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" id="speedRating" name="speedRating">
+                        <span class="text-xs text-gray-500 ml-2">Excelente</span>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <label class="block text-sm text-gray-700">Amabilidad del personal</label>
+                      <div class="flex items-center">
+                        <span class="text-xs text-gray-500 mr-2">Deficiente</span>
+                        <input type="range" min="1" max="5" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" id="kindnessRating" name="kindnessRating">
+                        <span class="text-xs text-gray-500 ml-2">Excelente</span>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <label class="block text-sm text-gray-700">Claridad de la información</label>
+                      <div class="flex items-center">
+                        <span class="text-xs text-gray-500 mr-2">Deficiente</span>
+                        <input type="range" min="1" max="5" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" id="clarityRating" name="clarityRating">
+                        <span class="text-xs text-gray-500 ml-2">Excelente</span>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <label class="block text-sm text-gray-700">Utilidad del servicio</label>
+                      <div class="flex items-center">
+                        <span class="text-xs text-gray-500 mr-2">Deficiente</span>
+                        <input type="range" min="1" max="5" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" id="usefulnessRating" name="usefulnessRating">
+                        <span class="text-xs text-gray-500 ml-2">Excelente</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="space-y-2">
+                  <label for="improvements" class="block text-sm font-medium text-gray-700">¿Qué podríamos mejorar en nuestro servicio?</label>
+                  <textarea id="improvements" name="improvements" rows="3" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"></textarea>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex justify-between">
+              <button type="button" id="backToPage1" class="border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-6 rounded-md transition duration-300">
+                Anterior
+              </button>
+              <button type="button" id="nextToPage3" class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-6 rounded-md transition duration-300">
+                Siguiente
+              </button>
+            </div>
+          </div>
+          
+          <!-- Página 3: Comentarios finales -->
+          <div id="page3" class="survey-page hidden">
+            <div class="mb-8">
+              <h2 class="text-xl font-semibold text-gray-800 mb-4">Comentarios finales</h2>
+              
+              <div class="space-y-6">
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-gray-700">¿Recomendarías nuestros servicios a otras personas?</label>
+                  <div class="flex items-center">
+                    <span class="text-sm text-gray-500 mr-2">Poco probable</span>
+                    <input type="range" min="0" max="10" value="7" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" id="recommendationScore" name="recommendationScore">
+                    <span class="text-sm text-gray-500 ml-2">Muy probable</span>
+                  </div>
+                  <div class="text-center mt-1">
+                    <span class="text-sm font-medium" id="recommendationValue">7</span><span class="text-sm text-gray-500">/10</span>
+                  </div>
+                </div>
+                
+                <div class="space-y-2">
+                  <label for="positiveAspects" class="block text-sm font-medium text-gray-700">¿Qué fue lo que más te gustó de nuestro servicio?</label>
+                  <textarea id="positiveAspects" name="positiveAspects" rows="3" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"></textarea>
+                </div>
+                
+                <div class="space-y-2">
+                  <label for="negativeAspects" class="block text-sm font-medium text-gray-700">¿Qué fue lo que menos te gustó de nuestro servicio?</label>
+                  <textarea id="negativeAspects" name="negativeAspects" rows="3" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"></textarea>
+                </div>
+                
+                <div class="space-y-2">
+                  <label for="additionalComments" class="block text-sm font-medium text-gray-700">¿Tienes algún otro comentario o sugerencia?</label>
+                  <textarea id="additionalComments" name="additionalComments" rows="3" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"></textarea>
+                </div>
+                
+                <div class="space-y-2">
+                  <div class="flex items-start">
+                    <input id="contactConsent" name="contactConsent" type="checkbox" class="h-4 w-4 mt-1 text-primary focus:ring-primary border-gray-300 rounded">
+                    <label for="contactConsent" class="ml-2 block text-sm text-gray-700">
+                      Estoy dispuesto a ser contactado para proporcionar más información sobre mi experiencia.
+                    </label>
+                  </div>
+                </div>
+                
+                <div id="contactInfo" class="space-y-4 hidden">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <label for="contactName" class="block text-sm font-medium text-gray-700">Nombre</label>
+                      <input type="text" id="contactName" name="contactName" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <label for="contactEmail" class="block text-sm font-medium text-gray-700">Correo electrónico</label>
+                      <input type="email" id="contactEmail" name="contactEmail" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex justify-between">
+              <button type="button" id="backToPage2" class="border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-6 rounded-md transition duration-300">
+                Anterior
+              </button>
+              <button type="submit" class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-6 rounded-md transition duration-300">
+                Enviar encuesta
+              </button>
+            </div>
+          </div>
+        </form>
+        
+        <!-- Mensaje de agradecimiento (oculto inicialmente) -->
+        <div id="thankYouMessage" class="hidden text-center py-8">
+          <div class="text-5xl mb-4">🎉</div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">¡Gracias por tu feedback!</h2>
+          <p class="text-gray-600 mb-6">Tu opinión es muy valiosa para nosotros y nos ayudará a mejorar nuestros servicios.</p>
+          <a href="/validar" class="inline-block bg-primary hover:bg-primary-dark text-white font-medium py-2 px-6 rounded-md transition duration-300">
+            Volver a tus ticket!
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="mt-auto bg-white border-t border-gray-200 py-6">
+    <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+      &copy; 2025 New Beginnings. Todos los derechos reservados.
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Referencias a elementos
+      const form = document.getElementById('surveyForm');
+      const page1 = document.getElementById('page1');
+      const page2 = document.getElementById('page2');
+      const page3 = document.getElementById('page3');
+      const nextToPage2 = document.getElementById('nextToPage2');
+      const backToPage1 = document.getElementById('backToPage1');
+      const nextToPage3 = document.getElementById('nextToPage3');
+      const backToPage2 = document.getElementById('backToPage2');
+      const currentPageEl = document.getElementById('currentPage');
+      const progressBar = document.getElementById('progressBar');
+      const thankYouMessage = document.getElementById('thankYouMessage');
+      const contactConsent = document.getElementById('contactConsent');
+      const contactInfo = document.getElementById('contactInfo');
+      const recommendationScore = document.getElementById('recommendationScore');
+      const recommendationValue = document.getElementById('recommendationValue');
+      
+      // Cargar opciones de servicio desde la API
+      const serviceTypeSelect = document.getElementById('serviceType');
+      try {
+        const res = await fetch('/api/situaciones');
+        if (res.ok) {
+          const situaciones = await res.json();
+          serviceTypeSelect.innerHTML = '<option value="">Selecciona una opción</option>';
+          situaciones.forEach(s => {
+            serviceTypeSelect.innerHTML += `<option value="${s.Id}">${s.Situacion}</option>`;
+          });
+          // Agrega la opción "Otro"
+          serviceTypeSelect.innerHTML += `<option value="otro">Otro</option>`;
+        }
+      } catch (e) {
+        // Si falla, deja las opciones por defecto
+      }
+      
+      // Mostrar/ocultar campos de contacto
+      contactConsent.addEventListener('change', function() {
+        if (this.checked) {
+          contactInfo.classList.remove('hidden');
+        } else {
+          contactInfo.classList.add('hidden');
+        }
+      });
+      
+      // Actualizar valor de recomendación
+      recommendationScore.addEventListener('input', function() {
+        recommendationValue.textContent = this.value;
+      });
+      
+      // Estrellas de calificación siempre visibles
+      const stars = document.querySelectorAll('#starRating .star');
+      const ratingInput = document.getElementById('rating');
+      let currentRating = 0;
+
+      stars.forEach(star => {
+        star.addEventListener('mouseenter', function() {
+          highlightStars(this.dataset.value);
+        });
+        star.addEventListener('mouseleave', function() {
+          highlightStars(currentRating);
+        });
+        star.addEventListener('click', function() {
+          currentRating = this.dataset.value;
+          ratingInput.value = currentRating;
+          highlightStars(currentRating);
+        });
+      });
+
+      function highlightStars(rating) {
+        stars.forEach(star => {
+          if (star.dataset.value <= rating) {
+            star.classList.remove('text-gray-300');
+            star.classList.add('text-yellow-400');
+          } else {
+            star.classList.add('text-gray-300');
+            star.classList.remove('text-yellow-400');
+          }
+        });
+      }
+      
+      // Navegación entre páginas
+      nextToPage2.addEventListener('click', function() {
+        // Validar campos requeridos en la página 1
+        const serviceType = document.getElementById('serviceType').value;
+        const serviceDate = document.getElementById('serviceDate').value;
+        
+        if (!serviceType || !serviceDate) {
+          alert('Por favor, completa todos los campos requeridos.');
+          return;
+        }
+        
+        page1.classList.add('hidden');
+        page2.classList.remove('hidden');
+        currentPageEl.textContent = '2';
+        progressBar.style.width = '66%';
+      });
+      
+      backToPage1.addEventListener('click', function() {
+        page2.classList.add('hidden');
+        page1.classList.remove('hidden');
+        currentPageEl.textContent = '1';
+        progressBar.style.width = '33%';
+      });
+      
+      nextToPage3.addEventListener('click', function() {
+        // Validar campos requeridos en la página 2
+        const rating = document.getElementById('rating').value;
+        const satisfaction = document.querySelector('input[name="satisfaction"]:checked');
+
+        if (!rating || rating === "0" || !satisfaction) {
+          alert('Por favor, completa la evaluación de tu experiencia y nivel de satisfacción.');
+          return;
+        }
+
+        page2.classList.add('hidden');
+        page3.classList.remove('hidden');
+        currentPageEl.textContent = '3';
+        progressBar.style.width = '100%';
+      });
+      
+      backToPage2.addEventListener('click', function() {
+        page3.classList.add('hidden');
+        page2.classList.remove('hidden');
+        currentPageEl.textContent = '2';
+        progressBar.style.width = '66%';
+      });
+      
+      // Envío del formulario
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Recolectar datos del formulario
+        const data = {
+          serviceType: form.serviceType.value,
+          otherService: form.otherService.value,
+          serviceDate: form.serviceDate.value,
+          source: form.source.value,
+          rating: form.rating.value,
+          satisfaction: form.satisfaction.value,
+          speedRating: form.speedRating.value,
+          kindnessRating: form.kindnessRating.value,
+          clarityRating: form.clarityRating.value,
+          usefulnessRating: form.usefulnessRating.value,
+          improvements: form.improvements.value,
+          recommendationScore: form.recommendationScore.value,
+          positiveAspects: form.positiveAspects.value,
+          negativeAspects: form.negativeAspects.value,
+          additionalComments: form.additionalComments.value,
+          contactConsent: form.contactConsent.checked,
+          contactName: form.contactName.value,
+          contactEmail: form.contactEmail.value
+        };
+
+        try {
+          const response = await fetch('/api/satisfaccion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (response.ok) {
+            form.classList.add('hidden');
+            thankYouMessage.classList.remove('hidden');
+            currentPageEl.textContent = '1';
+            progressBar.style.width = '33%';
+          } else {
+            alert('Error al enviar la encuesta.');
+          }
+        } catch (err) {
+          alert('Error de conexión al enviar la encuesta.');
+        }
+      });
+      
+      // Mostrar/ocultar campo "Otro servicio"
+      document.getElementById('serviceType').addEventListener('change', function() {
+        const otherServiceField = document.getElementById('otherService');
+        if (this.value === 'otro') {
+          otherServiceField.parentElement.classList.remove('hidden');
+        } else {
+          otherServiceField.parentElement.classList.add('hidden');
+        }
+      });
+      
+      // Inicializar el campo "Otro servicio" como oculto
+      if (document.getElementById('serviceType').value !== 'otro') {
+        document.getElementById('otherService').parentElement.classList.add('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
