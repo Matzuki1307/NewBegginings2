@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle del ticket - New Beginnings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/assets/JS/tailwind-config.js"></script>
+    <script src="/assets/JS/app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header id="app-header"></header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <a id="volver" href="/panel" class="text-sm text-primary hover:underline">&larr; Volver</a>
+
+        <p id="error-carga" class="hidden mt-4 p-4 rounded-md bg-red-50 text-red-700"></p>
+
+        <div id="contenido" class="hidden">
+            <div class="flex flex-wrap items-center gap-3 mt-2 mb-6">
+                <h1 id="titulo" class="text-2xl font-bold text-gray-900"></h1>
+                <span id="estado-badge"></span>
+                <a id="btn-encuesta" href="/satisfaccion" class="hidden ml-auto bg-primary hover:bg-primary-dark text-white text-sm font-medium py-2 px-4 rounded-md">Evaluar atención</a>
+            </div>
+
+            <div class="grid gap-6 lg:grid-cols-3">
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Información -->
+                    <section class="bg-white rounded-lg shadow-sm p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Información de la solicitud</h2>
+                        <dl id="datos" class="grid gap-x-6 gap-y-4 sm:grid-cols-2 text-sm"></dl>
+                        <div id="cierre" class="hidden mt-6 p-4 rounded-md bg-gray-50 border border-gray-200 text-sm"></div>
+                    </section>
+
+                    <!-- Comentarios -->
+                    <section class="bg-white rounded-lg shadow-sm p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Comentarios</h2>
+                        <ul id="comentarios" class="space-y-4 mb-4"></ul>
+                        <form id="form-comentario" class="hidden space-y-2">
+                            <label for="comentario" class="block text-sm font-medium text-gray-700">Agregar comentario</label>
+                            <textarea id="comentario" rows="3" maxlength="2000" placeholder="Escribe información adicional sobre la solicitud"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                            <p class="hidden text-sm text-red-600" data-error></p>
+                            <button class="bg-primary hover:bg-primary-dark text-white text-sm font-medium py-2 px-4 rounded-md">Comentar</button>
+                        </form>
+                    </section>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Gestión (solo con permisos) -->
+                    <section id="gestion" class="hidden bg-white rounded-lg shadow-sm p-6 space-y-6">
+                        <h2 class="text-lg font-semibold text-gray-900">Gestión</h2>
+
+                        <form id="form-estado" class="hidden space-y-2">
+                            <label for="nuevo-estado" class="block text-sm font-medium text-gray-700">Estado</label>
+                            <div class="flex gap-2">
+                                <select id="nuevo-estado" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"></select>
+                                <button class="bg-primary hover:bg-primary-dark text-white text-sm font-medium py-2 px-4 rounded-md">Guardar</button>
+                            </div>
+                            <p class="hidden text-sm text-red-600" data-error></p>
+                        </form>
+
+                        <form id="form-asignar" class="hidden space-y-2">
+                            <label for="funcionario" class="block text-sm font-medium text-gray-700">Responsable</label>
+                            <div class="flex gap-2">
+                                <select id="funcionario" class="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                    <option value="">Selecciona un funcionario</option>
+                                </select>
+                                <button class="bg-primary hover:bg-primary-dark text-white text-sm font-medium py-2 px-4 rounded-md">Asignar</button>
+                            </div>
+                            <p class="hidden text-sm text-red-600" data-error></p>
+                        </form>
+
+                        <form id="form-cerrar" class="hidden space-y-2 pt-4 border-t border-gray-100">
+                            <label for="observacion" class="block text-sm font-medium text-gray-700">Observación de cierre</label>
+                            <textarea id="observacion" rows="3" maxlength="2000" placeholder="¿Cómo se resolvió la solicitud?"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                            <p class="hidden text-sm text-red-600" data-error></p>
+                            <button class="w-full bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium py-2 px-4 rounded-md">Cerrar ticket</button>
+                        </form>
+                    </section>
+
+                    <!-- Historial -->
+                    <section id="seccion-historial" class="hidden bg-white rounded-lg shadow-sm p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Historial</h2>
+                        <ol id="historial" class="relative border-l border-gray-200 ml-2 space-y-5"></ol>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const ticketId = location.pathname.split('/').pop();
+        let ticket;
+
+        function dato(etiqueta, valor) {
+            return `<div><dt class="text-gray-500">${etiqueta}</dt><dd class="font-medium text-gray-900 mt-0.5">${App.escapar(valor ?? '-') || '-'}</dd></div>`;
+        }
+
+        async function cargarTicket() {
+            ticket = await App.api(`/api/tickets/${ticketId}`);
+            const a = ticket.acciones;
+
+            document.getElementById('titulo').textContent = `Ticket T-${ticket.id}`;
+            document.getElementById('estado-badge').innerHTML = App.estadoBadge(ticket.estado);
+            document.getElementById('btn-encuesta').classList.toggle('hidden', !a.encuesta);
+
+            const documento = [ticket.tipo_identificacion, ticket.numero_identificacion].filter(Boolean).join(' ');
+            document.getElementById('datos').innerHTML = [
+                dato('Solicitante', ticket.nombre),
+                dato('Documento', documento),
+                dato('Género', ticket.genero),
+                dato('Teléfono', ticket.telefono),
+                dato('Correo de la cuenta', ticket.email_solicitante),
+                dato('Situación', ticket.situacion),
+                dato('Departamento', ticket.departamento),
+                ticket.cantidad ? dato('Cantidad', `${ticket.cantidad} ${ticket.unidad_medida || ''}`) : '',
+                dato('Responsable', ticket.responsable || 'Sin asignar'),
+                dato('Creado', App.fecha(ticket.fecha_creacion, true)),
+                dato('Última actualización', App.fecha(ticket.fecha_actualizacion, true))
+            ].join('');
+
+            const cierre = document.getElementById('cierre');
+            cierre.classList.toggle('hidden', ticket.estado !== 'Cerrado');
+            if (ticket.estado === 'Cerrado') {
+                cierre.innerHTML = `
+                    <p class="font-semibold text-gray-900 mb-1">Cerrado el ${App.fecha(ticket.fecha_cierre, true)} por ${App.escapar(ticket.cerrado_por || '-')}</p>
+                    <p class="text-gray-700 whitespace-pre-line">${App.escapar(ticket.observacion_cierre)}</p>`;
+            }
+
+            // Formularios de gestión según las acciones permitidas
+            const selectEstado = document.getElementById('nuevo-estado');
+            selectEstado.innerHTML = ticket.estadosDisponibles
+                .map(e => `<option ${e === ticket.estado ? 'selected' : ''}>${e}</option>`).join('');
+            document.getElementById('form-estado').classList.toggle('hidden', !a.cambiarEstado);
+            document.getElementById('form-asignar').classList.toggle('hidden', !a.asignar);
+            document.getElementById('form-cerrar').classList.toggle('hidden', !a.cerrar);
+            document.getElementById('gestion').classList.toggle('hidden', !(a.cambiarEstado || a.asignar || a.cerrar));
+            document.getElementById('form-comentario').classList.toggle('hidden', !a.comentar);
+            document.getElementById('seccion-historial').classList.toggle('hidden', !a.verHistorial);
+
+            if (a.asignar) {
+                const funcionarios = await App.api('/api/funcionarios');
+                document.getElementById('funcionario').innerHTML = '<option value="">Selecciona un funcionario</option>' +
+                    funcionarios.map(f => `<option value="${f.id}" ${f.id === ticket.funcionario_id ? 'selected' : ''}>${
+                        App.escapar(f.nombre + ' ' + f.apellido)} (${App.escapar(f.rol)})</option>`).join('');
+            }
+
+            await Promise.all([cargarComentarios(), a.verHistorial ? cargarHistorial() : null]);
+        }
+
+        async function cargarComentarios() {
+            const comentarios = await App.api(`/api/tickets/${ticketId}/comentarios`);
+            document.getElementById('comentarios').innerHTML = comentarios.length === 0
+                ? '<li class="text-sm text-gray-500">Todavía no hay comentarios.</li>'
+                : comentarios.map(c => `
+                    <li class="border-l-4 border-primary-light pl-4">
+                        <p class="text-sm text-gray-900 whitespace-pre-line">${App.escapar(c.comentario)}</p>
+                        <p class="text-xs text-gray-500 mt-1">${App.escapar(c.autor)} · ${App.escapar(c.rol)} · ${App.fecha(c.fecha, true)}</p>
+                    </li>`).join('');
+        }
+
+        async function cargarHistorial() {
+            const historial = await App.api(`/api/tickets/${ticketId}/historial`);
+            document.getElementById('historial').innerHTML = historial.length === 0
+                ? '<li class="ml-4 text-sm text-gray-500">No existen registros en el historial.</li>'
+                : historial.map(h => `
+                    <li class="ml-4">
+                        <span class="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full bg-primary-light border-2 border-white"></span>
+                        <p class="text-sm font-semibold text-gray-900">${App.escapar(h.accion)}</p>
+                        <p class="text-sm text-gray-700">${App.escapar(h.detalle || '')}</p>
+                        <p class="text-xs text-gray-500 mt-0.5">${App.escapar(h.usuario || 'Sistema')} · ${App.fecha(h.fecha, true)}</p>
+                    </li>`).join('');
+        }
+
+        // Envía un formulario de gestión, muestra el error junto a él y recarga el ticket
+        function alEnviar(idFormulario, accion) {
+            const form = document.getElementById(idFormulario);
+            form.addEventListener('submit', async e => {
+                e.preventDefault();
+                const errorEl = form.querySelector('[data-error]');
+                const boton = form.querySelector('button');
+                boton.disabled = true;
+                try {
+                    const respuesta = await accion();
+                    App.error(errorEl, '');
+                    App.aviso(respuesta.mensaje);
+                    form.reset();
+                    await cargarTicket();
+                } catch (error) {
+                    App.error(errorEl, error.message);
+                } finally {
+                    boton.disabled = false;
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await App.iniciar();
+            const volver = document.getElementById('volver');
+            if (App.puede('tickets.ver_todos')) { volver.href = '/gestion'; volver.innerHTML = '&larr; Volver a la bandeja'; }
+            else if (App.puede('tickets.ver_propios')) { volver.href = '/validar'; volver.innerHTML = '&larr; Volver a mis tickets'; }
+
+            alEnviar('form-estado', () => App.api(`/api/tickets/${ticketId}/estado`, {
+                method: 'PATCH', body: { estado: document.getElementById('nuevo-estado').value } }));
+            alEnviar('form-asignar', () => App.api(`/api/tickets/${ticketId}/asignar`, {
+                method: 'PATCH', body: { funcionarioId: document.getElementById('funcionario').value } }));
+            alEnviar('form-cerrar', () => App.api(`/api/tickets/${ticketId}/cerrar`, {
+                method: 'POST', body: { observacion: document.getElementById('observacion').value } }));
+            alEnviar('form-comentario', () => App.api(`/api/tickets/${ticketId}/comentarios`, {
+                method: 'POST', body: { comentario: document.getElementById('comentario').value } }));
+
+            try {
+                await cargarTicket();
+                document.getElementById('contenido').classList.remove('hidden');
+            } catch (error) {
+                App.error(document.getElementById('error-carga'), error.message);
+            }
+        });
+    </script>
+</body>
+</html>

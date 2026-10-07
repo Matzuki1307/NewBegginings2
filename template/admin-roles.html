@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roles y permisos - New Beginnings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/assets/JS/tailwind-config.js"></script>
+    <script src="/assets/JS/app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header id="app-header"></header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold text-gray-900">Roles y permisos</h1>
+        <p class="text-gray-600 mt-1 mb-6">Define qué puede hacer cada rol, qué tarjetas ve en su panel y cómo se comporta el formulario de ayuda.</p>
+
+        <div class="grid gap-6 lg:grid-cols-4">
+            <!-- Lista de roles -->
+            <aside class="lg:col-span-1 space-y-3">
+                <ul id="roles" class="bg-white rounded-lg shadow-sm divide-y divide-gray-100 overflow-hidden"></ul>
+                <form id="form-nuevo" class="bg-white rounded-lg shadow-sm p-4 space-y-2">
+                    <label for="nuevo-nombre" class="block text-sm font-medium text-gray-700">Nuevo rol</label>
+                    <input id="nuevo-nombre" maxlength="50" placeholder="Ej: Coordinador" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                    <p class="hidden text-sm text-red-600" data-error></p>
+                    <button class="w-full bg-primary hover:bg-primary-dark text-white text-sm font-medium py-2 px-4 rounded-md">Crear rol</button>
+                </form>
+            </aside>
+
+            <!-- Configuración del rol seleccionado -->
+            <section id="editor" class="hidden lg:col-span-3 bg-white rounded-lg shadow-sm">
+                <form id="form-rol" class="p-6 border-b border-gray-100 space-y-3">
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div>
+                            <label for="rol-nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                            <input id="rol-nombre" maxlength="50" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-gray-100">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="rol-descripcion" class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                            <input id="rol-descripcion" maxlength="255" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                    </div>
+                    <p id="rol-nota" class="text-xs text-gray-500"></p>
+                    <p class="hidden text-sm text-red-600" data-error></p>
+                    <div class="flex flex-wrap gap-3">
+                        <button class="bg-primary hover:bg-primary-dark text-white text-sm font-medium py-2 px-4 rounded-md">Guardar datos</button>
+                        <button type="button" id="eliminar" class="border border-red-300 text-red-700 hover:bg-red-50 text-sm font-medium py-2 px-4 rounded-md">Eliminar rol</button>
+                    </div>
+                </form>
+
+                <!-- Pestañas -->
+                <div class="border-b border-gray-200 px-6 flex gap-6 text-sm" role="tablist">
+                    <button data-pestana="permisos" role="tab" class="py-3 border-b-2 font-medium">Permisos</button>
+                    <button data-pestana="tarjetas" role="tab" class="py-3 border-b-2 font-medium">Tarjetas del panel</button>
+                    <button data-pestana="campos" role="tab" class="py-3 border-b-2 font-medium">Campos del formulario</button>
+                </div>
+
+                <form id="panel-permisos" data-panel class="p-6 space-y-6">
+                    <p id="permisos-nota" class="hidden p-3 rounded-md bg-blue-50 text-blue-800 text-sm">El rol administrador siempre tiene todos los permisos.</p>
+                    <div id="permisos" class="space-y-6"></div>
+                    <p class="hidden text-sm text-red-600" data-error></p>
+                    <button class="bg-primary hover:bg-primary-dark text-white text-sm font-medium py-2 px-4 rounded-md disabled:opacity-50">Guardar permisos</button>
+                </form>
+
+                <form id="panel-tarjetas" data-panel class="hidden p-6 space-y-4">
+                    <p class="text-sm text-gray-600">Elige qué tarjetas aparecen en el panel de este rol. Una tarjeta visible solo se muestra si el rol también tiene el permiso de esa sección.</p>
+                    <div id="tarjetas" class="grid gap-3 sm:grid-cols-2"></div>
+                    <p class="hidden text-sm text-red-600" data-error></p>
+                    <button class="bg-primary hover:bg-primary-dark text-white text-sm font-medium py-2 px-4 rounded-md">Guardar tarjetas</button>
+                </form>
+
+                <form id="panel-campos" data-panel class="hidden p-6 space-y-4">
+                    <p class="text-sm text-gray-600">Configura cada campo del formulario de ayuda para este rol. Un campo oculto no se puede editar, y uno que no se puede editar no puede ser obligatorio. Unidad de medida y cantidad solo aparecen para desplazamiento forzado.</p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="text-left text-xs text-gray-500 uppercase">
+                                <tr><th class="py-2 pr-4">Campo</th><th class="py-2 px-4 text-center">Visible</th><th class="py-2 px-4 text-center">Habilitado</th><th class="py-2 px-4 text-center">Obligatorio</th></tr>
+                            </thead>
+                            <tbody id="campos" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                    <p class="hidden text-sm text-red-600" data-error></p>
+                    <button class="bg-primary hover:bg-primary-dark text-white text-sm font-medium py-2 px-4 rounded-md">Guardar campos</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        let roles = [];
+        let rolActual = null;
+        let config = null;
+
+        async function cargarRoles(seleccionar) {
+            roles = await App.api('/api/roles');
+            document.getElementById('roles').innerHTML = roles.map(r => `
+                <li>
+                    <button data-rol="${r.id}" class="w-full text-left px-4 py-3 hover:bg-gray-50 ${r.id === seleccionar ? 'bg-blue-50' : ''}">
+                        <span class="block font-medium text-gray-900">${App.escapar(r.nombre)}</span>
+                        <span class="block text-xs text-gray-500">${r.usuarios} usuario(s)${r.es_sistema ? ' · Sistema' : ''}${r.es_registro ? ' · Registro público' : ''}</span>
+                    </button>
+                </li>`).join('');
+            if (seleccionar) await seleccionarRol(seleccionar);
+        }
+
+        async function seleccionarRol(id) {
+            config = await App.api(`/api/roles/${id}/configuracion`);
+            rolActual = config.rol;
+            document.querySelectorAll('[data-rol]').forEach(b => b.classList.toggle('bg-blue-50', Number(b.dataset.rol) === id));
+            document.querySelectorAll('[data-error]').forEach(el => App.error(el, ''));
+            document.getElementById('editor').classList.remove('hidden');
+
+            // Datos del rol
+            document.getElementById('rol-nombre').value = rolActual.nombre;
+            document.getElementById('rol-nombre').disabled = rolActual.es_sistema;
+            document.getElementById('rol-descripcion').value = rolActual.descripcion || '';
+            document.getElementById('eliminar').classList.toggle('hidden', rolActual.es_sistema);
+            document.getElementById('rol-nota').textContent = rolActual.es_sistema
+                ? 'Rol del sistema: no se puede renombrar ni eliminar.' : '';
+
+            // Permisos agrupados por módulo
+            const modulos = {};
+            config.permisos.forEach(p => (modulos[p.modulo] ||= []).push(p));
+            document.getElementById('permisos-nota').classList.toggle('hidden', !rolActual.es_admin);
+            document.querySelector('#panel-permisos > button').disabled = rolActual.es_admin;
+            document.getElementById('permisos').innerHTML = Object.entries(modulos).map(([modulo, permisos]) => `
+                <fieldset>
+                    <legend class="text-sm font-semibold text-gray-900 mb-2">${App.escapar(modulo)}</legend>
+                    <div class="grid gap-2 sm:grid-cols-2">
+                        ${permisos.map(p => `
+                            <label class="flex gap-3 p-3 rounded-md border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" value="${p.codigo}" ${p.activo ? 'checked' : ''} ${rolActual.es_admin ? 'disabled' : ''} class="mt-1 h-4 w-4 accent-primary">
+                                <span><span class="block text-sm font-medium text-gray-900">${App.escapar(p.nombre)}</span>
+                                      <span class="block text-xs text-gray-500">${App.escapar(p.descripcion || '')}</span></span>
+                            </label>`).join('')}
+                    </div>
+                </fieldset>`).join('');
+
+            // Tarjetas
+            document.getElementById('tarjetas').innerHTML = config.tarjetas.map(t => `
+                <label class="flex gap-3 p-3 rounded-md border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" value="${t.codigo}" ${t.visible ? 'checked' : ''} class="mt-1 h-4 w-4 accent-primary">
+                    <span><span class="block text-sm font-medium text-gray-900">${App.escapar(t.nombre)}</span>
+                          <span class="block text-xs text-gray-500">${App.escapar(t.descripcion || '')} · ${App.escapar(t.ruta)}</span></span>
+                </label>`).join('');
+
+            // Campos
+            document.getElementById('campos').innerHTML = config.campos.map(c => `
+                <tr data-campo="${c.codigo}">
+                    <td class="py-2 pr-4 font-medium text-gray-900">${App.escapar(c.etiqueta)}</td>
+                    ${['visible', 'habilitado', 'obligatorio'].map(atributo => `
+                        <td class="py-2 px-4 text-center"><input type="checkbox" data-atributo="${atributo}" ${c[atributo] ? 'checked' : ''}
+                            aria-label="${atributo} ${App.escapar(c.etiqueta)}" class="h-4 w-4 accent-primary"></td>`).join('')}
+                </tr>`).join('');
+            document.querySelectorAll('#campos tr').forEach(ajustarCampo);
+        }
+
+        // Mantiene la coherencia: oculto => no habilitado; no habilitado => no obligatorio
+        function ajustarCampo(fila) {
+            const [visible, habilitado, obligatorio] = ['visible', 'habilitado', 'obligatorio']
+                .map(a => fila.querySelector(`[data-atributo="${a}"]`));
+            if (!visible.checked) habilitado.checked = false;
+            habilitado.disabled = !visible.checked;
+            if (!habilitado.checked) obligatorio.checked = false;
+            obligatorio.disabled = !habilitado.checked;
+        }
+
+        function mostrarPestana(nombre) {
+            document.querySelectorAll('[data-pestana]').forEach(b => {
+                const activa = b.dataset.pestana === nombre;
+                b.classList.toggle('border-primary', activa);
+                b.classList.toggle('text-primary', activa);
+                b.classList.toggle('border-transparent', !activa);
+                b.classList.toggle('text-gray-500', !activa);
+                b.setAttribute('aria-selected', activa);
+            });
+            document.querySelectorAll('[data-panel]').forEach(p => p.classList.toggle('hidden', p.id !== 'panel-' + nombre));
+        }
+
+        // Envía un formulario, muestra el error junto a él y avisa si salió bien
+        function alEnviar(idFormulario, accion) {
+            const form = document.getElementById(idFormulario);
+            form.addEventListener('submit', async e => {
+                e.preventDefault();
+                const errorEl = form.querySelector('[data-error]');
+                try {
+                    const respuesta = await accion();
+                    App.error(errorEl, '');
+                    App.aviso(respuesta.mensaje);
+                } catch (error) {
+                    App.error(errorEl, error.message);
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await App.iniciar();
+            mostrarPestana('permisos');
+
+            document.getElementById('roles').addEventListener('click', e => {
+                const boton = e.target.closest('[data-rol]');
+                if (boton) seleccionarRol(Number(boton.dataset.rol));
+            });
+            document.querySelectorAll('[data-pestana]').forEach(b => b.addEventListener('click', () => mostrarPestana(b.dataset.pestana)));
+            document.getElementById('campos').addEventListener('change', e => ajustarCampo(e.target.closest('tr')));
+
+            alEnviar('form-nuevo', async () => {
+                const respuesta = await App.api('/api/roles', { method: 'POST', body: { nombre: document.getElementById('nuevo-nombre').value } });
+                document.getElementById('nuevo-nombre').value = '';
+                await cargarRoles(respuesta.id);
+                return respuesta;
+            });
+
+            alEnviar('form-rol', async () => {
+                const respuesta = await App.api(`/api/roles/${rolActual.id}`, { method: 'PUT', body: {
+                    nombre: document.getElementById('rol-nombre').value,
+                    descripcion: document.getElementById('rol-descripcion').value } });
+                await cargarRoles(rolActual.id);
+                return respuesta;
+            });
+
+            document.getElementById('eliminar').addEventListener('click', async () => {
+                const errorEl = document.querySelector('#form-rol [data-error]');
+                try {
+                    const respuesta = await App.api(`/api/roles/${rolActual.id}`, { method: 'DELETE' });
+                    App.aviso(respuesta.mensaje);
+                    document.getElementById('editor').classList.add('hidden');
+                    await cargarRoles(null);
+                } catch (error) {
+                    App.error(errorEl, error.message);
+                }
+            });
+
+            alEnviar('panel-permisos', () => App.api(`/api/roles/${rolActual.id}/permisos`, { method: 'PUT', body: {
+                permisos: [...document.querySelectorAll('#permisos input:checked')].map(i => i.value) } }));
+
+            alEnviar('panel-tarjetas', () => App.api(`/api/roles/${rolActual.id}/tarjetas`, { method: 'PUT', body: {
+                tarjetas: [...document.querySelectorAll('#tarjetas input')].map(i => ({ codigo: i.value, visible: i.checked })) } }));
+
+            alEnviar('panel-campos', () => App.api(`/api/roles/${rolActual.id}/campos`, { method: 'PUT', body: {
+                campos: [...document.querySelectorAll('#campos tr')].map(fila => ({
+                    codigo: fila.dataset.campo,
+                    visible: fila.querySelector('[data-atributo="visible"]').checked,
+                    habilitado: fila.querySelector('[data-atributo="habilitado"]').checked,
+                    obligatorio: fila.querySelector('[data-atributo="obligatorio"]').checked })) } }));
+
+            await cargarRoles(null);
+            if (roles.length > 0) await seleccionarRol(roles[0].id);
+        });
+    </script>
+</body>
+</html>

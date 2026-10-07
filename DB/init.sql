@@ -125,3 +125,193 @@ INSERT INTO unidades_medida (nombre) VALUES
     ('Fanegadas'),
     ('Metros cuadrados')
 ON CONFLICT (nombre) DO NOTHING;
+
+-- =====================================================================
+-- Roles y permisos (HU6, HU7)
+-- =====================================================================
+
+CREATE TABLE IF NOT EXISTS roles (
+    id             SERIAL PRIMARY KEY,
+    nombre         VARCHAR(50) NOT NULL UNIQUE,
+    descripcion    VARCHAR(255),
+    es_sistema     BOOLEAN NOT NULL DEFAULT FALSE, -- No se puede eliminar ni renombrar
+    es_admin       BOOLEAN NOT NULL DEFAULT FALSE, -- Tiene todos los permisos siempre
+    es_registro    BOOLEAN NOT NULL DEFAULT FALSE, -- Rol que reciben quienes se registran solos
+    fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Catálogo fijo: cada permiso corresponde a una funcionalidad del código
+CREATE TABLE IF NOT EXISTS permisos (
+    id          SERIAL PRIMARY KEY,
+    codigo      VARCHAR(50) NOT NULL UNIQUE,
+    nombre      VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(255),
+    modulo      VARCHAR(50) NOT NULL,
+    orden       INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS roles_permisos (
+    rol_id     INT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    permiso_id INT NOT NULL REFERENCES permisos(id) ON DELETE CASCADE,
+    PRIMARY KEY (rol_id, permiso_id)
+);
+
+-- Tarjetas del panel y su visibilidad por rol (HU8)
+CREATE TABLE IF NOT EXISTS tarjetas (
+    id             SERIAL PRIMARY KEY,
+    codigo         VARCHAR(50) NOT NULL UNIQUE,
+    nombre         VARCHAR(100) NOT NULL,
+    descripcion    VARCHAR(255),
+    ruta           VARCHAR(100) NOT NULL,
+    permiso_codigo VARCHAR(50) NOT NULL, -- Además de estar visible, el usuario necesita este permiso
+    orden          INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS roles_tarjetas (
+    rol_id     INT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    tarjeta_id INT NOT NULL REFERENCES tarjetas(id) ON DELETE CASCADE,
+    visible    BOOLEAN NOT NULL,
+    PRIMARY KEY (rol_id, tarjeta_id)
+);
+
+-- Campos del formulario de ticket y su configuración por rol (HU9).
+-- El código coincide con el nombre del campo que envía formulario.js
+CREATE TABLE IF NOT EXISTS campos_formulario (
+    id                  SERIAL PRIMARY KEY,
+    codigo              VARCHAR(50) NOT NULL UNIQUE,
+    etiqueta            VARCHAR(100) NOT NULL,
+    obligatorio_defecto BOOLEAN NOT NULL DEFAULT TRUE,
+    orden               INT NOT NULL DEFAULT 0
+);
+
+-- Si un rol no tiene fila para un campo, se usan los valores por defecto
+-- (visible, habilitado y obligatorio según obligatorio_defecto)
+CREATE TABLE IF NOT EXISTS roles_campos (
+    rol_id      INT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    campo_id    INT NOT NULL REFERENCES campos_formulario(id) ON DELETE CASCADE,
+    visible     BOOLEAN NOT NULL,
+    habilitado  BOOLEAN NOT NULL,
+    obligatorio BOOLEAN NOT NULL,
+    PRIMARY KEY (rol_id, campo_id)
+);
+
+-- ===== Cambios sobre tablas existentes =====
+
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol_id INT REFERENCES roles(id);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS activo BOOLEAN NOT NULL DEFAULT TRUE;
+
+ALTER TABLE formularios ADD COLUMN IF NOT EXISTS funcionario_id INT REFERENCES usuarios(id);
+ALTER TABLE formularios ADD COLUMN IF NOT EXISTS fecha_actualizacion TIMESTAMPTZ;
+ALTER TABLE formularios ADD COLUMN IF NOT EXISTS fecha_cierre TIMESTAMPTZ;
+ALTER TABLE formularios ADD COLUMN IF NOT EXISTS cerrado_por INT REFERENCES usuarios(id);
+ALTER TABLE formularios ADD COLUMN IF NOT EXISTS observacion_cierre TEXT;
+
+-- Los campos del formulario son configurables por rol, así que pueden quedar vacíos
+ALTER TABLE formularios ALTER COLUMN nombre DROP NOT NULL;
+ALTER TABLE formularios ALTER COLUMN tipo_identificacion_id DROP NOT NULL;
+ALTER TABLE formularios ALTER COLUMN numero_identificacion DROP NOT NULL;
+ALTER TABLE formularios ALTER COLUMN genero_id DROP NOT NULL;
+ALTER TABLE formularios ALTER COLUMN telefono DROP NOT NULL;
+ALTER TABLE formularios ALTER COLUMN situacion_id DROP NOT NULL;
+ALTER TABLE formularios ALTER COLUMN departamento_id DROP NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_formularios_funcionario ON formularios(funcionario_id);
+CREATE INDEX IF NOT EXISTS idx_formularios_numero_id ON formularios(numero_identificacion);
+
+-- ===== Gestión de tickets (HU11, HU12) =====
+
+CREATE TABLE IF NOT EXISTS ticket_comentarios (
+    id            SERIAL PRIMARY KEY,
+    formulario_id INT NOT NULL REFERENCES formularios(id) ON DELETE CASCADE,
+    usuario_id    INT NOT NULL REFERENCES usuarios(id),
+    comentario    TEXT NOT NULL,
+    fecha         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ticket_historial (
+    id            SERIAL PRIMARY KEY,
+    formulario_id INT NOT NULL REFERENCES formularios(id) ON DELETE CASCADE,
+    usuario_id    INT REFERENCES usuarios(id),
+    accion        VARCHAR(50) NOT NULL,
+    detalle       TEXT,
+    fecha         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_comentarios_ticket ON ticket_comentarios(formulario_id);
+CREATE INDEX IF NOT EXISTS idx_historial_ticket ON ticket_historial(formulario_id);
+
+-- ===== Catálogos de permisos, tarjetas y campos =====
+-- Se actualizan en cada arranque para reflejar los textos del código
+
+INSERT INTO permisos (codigo, nombre, descripcion, modulo, orden) VALUES
+    ('tickets.crear',           'Crear tickets',               'Registrar solicitudes con el formulario de ayuda',             'Tickets',        1),
+    ('tickets.ver_propios',     'Consultar mis tickets',       'Ver los tickets que el usuario creó',                          'Tickets',        2),
+    ('tickets.ver_todos',       'Consultar todos los tickets', 'Acceder a la bandeja con los tickets de todos los usuarios',   'Tickets',        3),
+    ('tickets.cambiar_estado',  'Cambiar estado de tickets',   'Mover un ticket entre Pendiente, En proceso y Resuelto',       'Tickets',        4),
+    ('tickets.asignar',         'Asignar tickets',             'Elegir el funcionario responsable de un ticket',               'Tickets',        5),
+    ('tickets.comentar',        'Comentar tickets',            'Agregar información adicional a un ticket',                    'Tickets',        6),
+    ('tickets.ver_historial',   'Consultar historial',         'Ver las acciones realizadas sobre un ticket',                  'Tickets',        7),
+    ('tickets.cerrar',          'Cerrar y reabrir tickets',    'Finalizar la atención de un ticket o modificar uno cerrado',   'Tickets',        8),
+    ('encuestas.responder',     'Responder encuestas',         'Evaluar la atención recibida',                                 'Tickets',        9),
+    ('beneficiarios.consultar', 'Consultar beneficiarios',     'Buscar beneficiarios y ver su información',                    'Gestión',        10),
+    ('estadisticas.ver',        'Consultar estadísticas',      'Ver el resumen estadístico de los tickets',                    'Gestión',        11),
+    ('usuarios.gestionar',      'Gestionar usuarios',          'Crear, editar y desactivar usuarios',                          'Administración', 12),
+    ('roles.gestionar',         'Gestionar roles y permisos',  'Configurar roles, permisos, tarjetas y campos del formulario', 'Administración', 13)
+ON CONFLICT (codigo) DO UPDATE SET
+    nombre = EXCLUDED.nombre, descripcion = EXCLUDED.descripcion, modulo = EXCLUDED.modulo, orden = EXCLUDED.orden;
+
+INSERT INTO tarjetas (codigo, nombre, descripcion, ruta, permiso_codigo, orden) VALUES
+    ('crear_ticket',  'Crear ticket',       'Cuéntanos tu situación y te orientamos',  '/formulario',     'tickets.crear',           1),
+    ('mis_tickets',   'Mis tickets',        'Consulta el estado de tus solicitudes',   '/validar',        'tickets.ver_propios',     2),
+    ('bandeja',       'Bandeja de tickets', 'Atiende, asigna y cierra solicitudes',    '/gestion',        'tickets.ver_todos',       3),
+    ('beneficiarios', 'Beneficiarios',      'Busca personas y revisa sus solicitudes', '/beneficiarios',  'beneficiarios.consultar', 4),
+    ('estadisticas',  'Estadísticas',       'Resumen del estado de las solicitudes',   '/estadisticas',   'estadisticas.ver',        5),
+    ('usuarios',      'Usuarios',           'Crea funcionarios y administra cuentas',  '/admin/usuarios', 'usuarios.gestionar',      6),
+    ('roles',         'Roles y permisos',   'Define qué puede ver y hacer cada rol',   '/admin/roles',    'roles.gestionar',         7)
+ON CONFLICT (codigo) DO UPDATE SET
+    nombre = EXCLUDED.nombre, descripcion = EXCLUDED.descripcion, ruta = EXCLUDED.ruta,
+    permiso_codigo = EXCLUDED.permiso_codigo, orden = EXCLUDED.orden;
+
+INSERT INTO campos_formulario (codigo, etiqueta, obligatorio_defecto, orden) VALUES
+    ('nombre',       'Nombre completo',          TRUE,  1),
+    ('genero',       'Género',                   TRUE,  2),
+    ('tipoId',       'Tipo de identificación',   TRUE,  3),
+    ('numeroId',     'Número de identificación', TRUE,  4),
+    ('telefono',     'Teléfono',                 TRUE,  5),
+    ('situacionId',  'Situación',                TRUE,  6),
+    ('departamento', 'Departamento',             TRUE,  7),
+    ('unidadMedida', 'Unidad de medida',         FALSE, 8),
+    ('cantidad',     'Cantidad',                 FALSE, 9)
+ON CONFLICT (codigo) DO UPDATE SET etiqueta = EXCLUDED.etiqueta, orden = EXCLUDED.orden;
+
+-- ===== Roles iniciales =====
+-- Solo la primera vez: después los permisos los administra el Administrador
+-- y no deben sobrescribirse en cada arranque
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM roles) THEN
+        INSERT INTO roles (nombre, descripcion, es_sistema, es_admin, es_registro) VALUES
+            ('Administrador', 'Acceso total al sistema y a su configuración', TRUE, TRUE,  FALSE),
+            ('Funcionario',   'Atiende y gestiona las solicitudes',           TRUE, FALSE, FALSE),
+            ('Usuario',       'Persona que solicita orientación',             TRUE, FALSE, TRUE);
+
+        INSERT INTO roles_permisos (rol_id, permiso_id)
+        SELECT r.id, p.id FROM roles r JOIN permisos p ON
+            (r.nombre = 'Usuario' AND p.codigo IN (
+                'tickets.crear', 'tickets.ver_propios', 'tickets.comentar',
+                'tickets.ver_historial', 'encuestas.responder'))
+         OR (r.nombre = 'Funcionario' AND p.codigo IN (
+                'tickets.ver_todos', 'tickets.cambiar_estado', 'tickets.asignar', 'tickets.comentar',
+                'tickets.ver_historial', 'tickets.cerrar', 'beneficiarios.consultar'));
+
+        INSERT INTO roles_tarjetas (rol_id, tarjeta_id, visible)
+        SELECT r.id, t.id, TRUE FROM roles r JOIN tarjetas t ON
+            (r.nombre = 'Usuario' AND t.codigo IN ('crear_ticket', 'mis_tickets'))
+         OR (r.nombre = 'Funcionario' AND t.codigo IN ('bandeja', 'beneficiarios'));
+    END IF;
+END $$;
+
+-- Los usuarios creados antes de existir los roles quedan con el rol de registro
+UPDATE usuarios SET rol_id = (SELECT id FROM roles WHERE es_registro ORDER BY id LIMIT 1)
+WHERE rol_id IS NULL;

@@ -121,10 +121,10 @@
           const result = await response.json();
 
           if (response.ok) {
-            // Login exitoso: vuelve a la página desde donde se pidió el login (por defecto, el formulario)
+            // Login exitoso: vuelve a la página desde donde se pidió el login (por defecto, el panel)
             const redirect = new URLSearchParams(window.location.search).get('redirect');
             const esRutaInterna = redirect && /^\/(?![\/\\])/.test(redirect);
-            window.location.href = esRutaInterna ? redirect : '/formulario';
+            window.location.href = esRutaInterna ? redirect : '/panel';
           } else {
             errorMessage.textContent = result.error || 'Correo electrónico o contraseña incorrectos.';
             errorMessage.classList.remove('hidden');

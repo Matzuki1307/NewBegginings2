@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beneficiarios - New Beginnings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/assets/JS/tailwind-config.js"></script>
+    <script src="/assets/JS/app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header id="app-header"></header>
+
+    <main class="max-w-5xl mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold text-gray-900">Beneficiarios</h1>
+        <p class="text-gray-600 mt-1 mb-6">Busca a una persona por su nombre o número de identificación.</p>
+
+        <form id="buscador" class="bg-white rounded-lg shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3">
+            <label for="q" class="sr-only">Nombre o número de identificación</label>
+            <input id="q" type="search" minlength="3" maxlength="100" required placeholder="Ej: María Gómez o 1023456789"
+                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+            <button class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-6 rounded-md">Buscar</button>
+        </form>
+
+        <p id="error" class="hidden mb-4 p-3 rounded-md bg-red-50 text-red-700 text-sm"></p>
+        <div id="resultados" class="space-y-4"></div>
+    </main>
+
+    <script>
+        function dato(etiqueta, valor) {
+            return `<div><dt class="text-gray-500">${etiqueta}</dt><dd class="text-gray-900">${App.escapar(valor || '-')}</dd></div>`;
+        }
+
+        async function buscar(q) {
+            const resultados = document.getElementById('resultados');
+            const errorEl = document.getElementById('error');
+            history.replaceState(null, '', '?q=' + encodeURIComponent(q));
+            try {
+                const beneficiarios = await App.api('/api/beneficiarios?q=' + encodeURIComponent(q));
+                App.error(errorEl, '');
+                if (beneficiarios.length === 0) {
+                    resultados.innerHTML = '<p class="bg-white rounded-lg shadow-sm p-6 text-center text-gray-600">No se encontraron beneficiarios con ese criterio.</p>';
+                    return;
+                }
+                resultados.innerHTML = beneficiarios.map(b => `
+                    <article class="bg-white rounded-lg shadow-sm p-6">
+                        <div class="flex flex-wrap items-baseline justify-between gap-2 mb-4">
+                            <h2 class="text-lg font-semibold text-gray-900">${App.escapar(b.nombre || 'Sin nombre')}</h2>
+                            <span class="text-sm text-gray-500">${b.totalTickets} ticket(s)</span>
+                        </div>
+                        <dl class="grid gap-3 sm:grid-cols-3 text-sm mb-4">
+                            ${dato('Documento', [b.tipoIdentificacion, b.numeroIdentificacion].filter(Boolean).join(' '))}
+                            ${dato('Género', b.genero)}
+                            ${dato('Teléfono', b.telefono)}
+                            ${dato('Departamento', b.departamento)}
+                            ${dato('Correo de la cuenta', b.email)}
+                        </dl>
+                        ${b.tickets === null ? '' : `
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="text-left text-xs text-gray-500 uppercase">
+                                    <tr><th class="py-2 pr-4">Ticket</th><th class="py-2 pr-4">Situación</th><th class="py-2 pr-4">Estado</th><th class="py-2">Fecha</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    ${b.tickets.map(t => `
+                                        <tr>
+                                            <td class="py-2 pr-4"><a href="/tickets/${t.id}" class="text-primary hover:underline font-medium">T-${t.id}</a></td>
+                                            <td class="py-2 pr-4">${App.escapar(t.situacion || '-')}</td>
+                                            <td class="py-2 pr-4">${App.estadoBadge(t.estado)}</td>
+                                            <td class="py-2 text-gray-500">${App.fecha(t.fechaCreacion)}</td>
+                                        </tr>`).join('')}
+                                </tbody>
+                            </table>
+                        </div>`}
+                    </article>`).join('');
+            } catch (error) {
+                App.error(errorEl, error.message);
+                resultados.innerHTML = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await App.iniciar();
+            const input = document.getElementById('q');
+            document.getElementById('buscador').addEventListener('submit', e => {
+                e.preventDefault();
+                buscar(input.value.trim());
+            });
+            const q = new URLSearchParams(location.search).get('q');
+            if (q) { input.value = q; buscar(q); }
+        });
+    </script>
+</body>
+</html>

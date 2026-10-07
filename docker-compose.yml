@@ -22,6 +22,9 @@ services:
     environment:
       DATABASE_URL: postgres://newbeginnings:newbeginnings@db:5432/newbeginnings
       SESSION_SECRET: secreto-solo-para-desarrollo
+      # Administrador que se crea al arrancar si no existe
+      ADMIN_EMAIL: admin@newbeginnings.local
+      ADMIN_PASSWORD: Admin1234
       # En local no hay HTTPS, así que la cookie de sesión no puede ser "secure"
       NODE_ENV: development
     ports:
