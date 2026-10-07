@@ -37,6 +37,8 @@
                     <div class="lg:flex flex-col md:flex-row md:items-center text-center md:space-x-6" :class="{'hidden':!navbarOpen,'flex':navbarOpen}">
                         
                         <a href="/validar" class="px-6 py-4 border-2 border-blue-500 text-blue-500 font-semibold text-lg rounded-xl hover:bg-blue-700 hover:text-white transition ease-linear duration-500">Revisa tus tickets!</a>
+                        <!-- Solo se muestra si hay sesión iniciada -->
+                        <a href="/logout" id="logout-link" class="hidden px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold text-lg rounded-xl hover:bg-blue-700 hover:text-white transition ease-linear duration-500">Cerrar sesión</a>
                     </div>
                 </nav>
 
@@ -46,7 +48,7 @@
 
                         <p class="font-light text-gray-600 text-md md:text-lg leading-normal mb-12">Describenos tu situación y te guiaremos en tu camino</p>
 
-                        <button onclick="window.location.href='/login'" class="px-20 py-4 bg-info font-semibold text-white text-lg rounded-xl hover:bg-blue-700 transition ease-in-out duration-500">Vamos!</button>
+                        <button onclick="window.location.href='/formulario'" class="px-20 py-4 bg-info font-semibold text-white text-lg rounded-xl hover:bg-blue-700 transition ease-in-out duration-500">Vamos!</button>
                     </div>
 
                     <div class="mt-4">
@@ -292,6 +294,11 @@
 
         <script>
             feather.replace()
+
+            // Muestra "Cerrar sesión" si el usuario ya inició sesión
+            fetch('/api/usuario').then(res => {
+                if (res.ok) document.getElementById('logout-link').classList.remove('hidden');
+            }).catch(() => {});
         </script>
 
     </body>

@@ -136,6 +136,9 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Los enlaces al login conservan el destino (?redirect=...)
+      document.querySelectorAll('a[href="/login"]').forEach(a => a.href = '/login' + window.location.search);
+
       const form = document.getElementById('registroForm');
       const errorMessage = document.getElementById('error-message');
       const successMessage = document.getElementById('success-message');
@@ -200,7 +203,7 @@
             successMessage.classList.remove('hidden');
             form.reset();
             setTimeout(function() {
-              window.location.href = '/login';
+              window.location.href = '/login' + window.location.search;
             }, 2000);
           } else {
             errorMessage.textContent = result.error || 'Error al registrar el usuario.';

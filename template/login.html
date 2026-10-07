@@ -92,6 +92,9 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Los enlaces al registro conservan el destino (?redirect=...)
+      document.querySelectorAll('a[href="/registro"]').forEach(a => a.href = '/registro' + window.location.search);
+
       const form = document.getElementById('loginForm');
       const errorMessage = document.getElementById('error-message');
 
@@ -118,10 +121,10 @@
           const result = await response.json();
 
           if (response.ok) {
-            // Login exitoso, redirige al formulario
-            const params = new URLSearchParams(window.location.search);
-            const redirect = params.get('redirect');
-            window.location.href = redirect ? redirect : '/formulario'; // o la página que prefieras por defecto
+            // Login exitoso: vuelve a la página desde donde se pidió el login (por defecto, el formulario)
+            const redirect = new URLSearchParams(window.location.search).get('redirect');
+            const esRutaInterna = redirect && /^\/(?![\/\\])/.test(redirect);
+            window.location.href = esRutaInterna ? redirect : '/formulario';
           } else {
             errorMessage.textContent = result.error || 'Correo electrónico o contraseña incorrectos.';
             errorMessage.classList.remove('hidden');

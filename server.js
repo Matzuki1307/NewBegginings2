@@ -39,12 +39,25 @@ app.use(session({
     }
 }));
 
-// Middleware para proteger rutas
+// Middleware para proteger rutas de la API
 function requireLogin(req, res, next) {
     if (!req.session.userId) {
         return res.status(401).json({ error: 'No autorizado. Inicia sesión.' });
     }
     next();
+}
+
+// Middleware para proteger páginas: manda al login y luego regresa a la página pedida
+function requirePageLogin(req, res, next) {
+    if (!req.session.userId) {
+        return res.redirect('/login?redirect=' + encodeURIComponent(req.originalUrl));
+    }
+    next();
+}
+
+// Solo permite redirigir a rutas internas (evita redirecciones a otros sitios)
+function rutaSegura(destino) {
+    return typeof destino === 'string' && /^\/(?![\/\\])/.test(destino) ? destino : '/formulario';
 }
 
 // Ruta para comprobar que la app y la base de datos responden
@@ -63,27 +76,41 @@ app.get('/', (req, res) => {
 });
 
 // Ruta para el formulario
-app.get('/formulario', requireLogin, (req, res) => {
+app.get('/formulario', requirePageLogin, (req, res) => {
     res.sendFile(__dirname + '/template/formulario.html');
 });
 
+// Si ya hay sesión, el login y el registro llevan directo al destino
 app.get('/login', (req, res) => {
+    if (req.session.userId) {
+        return res.redirect(rutaSegura(req.query.redirect));
+    }
     res.sendFile(__dirname + '/template/login.html');
 });
 
 app.get('/registro', (req, res) => {
+    if (req.session.userId) {
+        return res.redirect(rutaSegura(req.query.redirect));
+    }
     res.sendFile(__dirname + '/template/registro.html');
 });
 
-app.get('/ticket', requireLogin, (req, res) => {
+app.get('/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.clearCookie('connect.sid');
+        res.redirect('/');
+    });
+});
+
+app.get('/ticket', requirePageLogin, (req, res) => {
     res.sendFile(__dirname + '/template/ticket.html');
 });
 
-app.get('/validar', requireLogin, (req, res) => {
+app.get('/validar', requirePageLogin, (req, res) => {
     res.sendFile(__dirname + '/template/validar.html');
 });
 
-app.get('/satisfaccion', requireLogin, (req, res) => {
+app.get('/satisfaccion', requirePageLogin, (req, res) => {
     res.sendFile(__dirname + '/template/satisfaccion.html');
 });
 
