@@ -1,19 +1,23 @@
 {
   "name": "newbegginings-main",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Plataforma de orientación para víctimas de desplazamiento forzado, violencia contra la mujer y maltrato intrafamiliar en Colombia",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "connect-pg-simple": "^10.0.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
-    "mssql": "^11.0.1"
+    "pg": "^8.23.1"
   }
 }

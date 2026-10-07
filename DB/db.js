@@ -1,33 +1,16 @@
 require('dotenv').config(); // Carga las variables de entorno desde .env
-const sql = require('mssql');
+const fs = require('fs');
+const path = require('path');
+const { Pool } = require('pg');
 
-// Configuración de la conexión usando variables de entorno
-const config = {
-    user: process.env.USER,
-    password: process.env.PASSWORD,
-    server: process.env.HOST,
-    port: parseInt(process.env.PORT, 10), // Agrega el puerto
-    database: process.env.DATABASE,
-    options: {
-        encrypt: false,
-        trustServerCertificate: true
-    }
-};
+// DATABASE_URL tiene la forma postgres://usuario:clave@host:5432/base
+// (para Neon u otro Postgres en la nube, añade ?sslmode=require)
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-module.exports = config;
-
-
-// Conexión y consulta
-async function connectAndQuery() {
-    try {
-        const pool = await sql.connect(config);
-        const result = await pool.request().query('SELECT * FROM Genero'); // Cambia la consulta según tus necesidades
-        console.log(result.recordset);
-    } catch (err) {
-        console.error('Error al conectar:', err);
-    } finally {
-        sql.close(); // Cierra la conexión
-    }
+// Crea las tablas y carga los catálogos si todavía no existen
+async function initDb() {
+    const script = fs.readFileSync(path.join(__dirname, 'init.sql'), 'utf8');
+    await pool.query(script);
 }
 
-connectAndQuery();
+module.exports = { pool, initDb };
