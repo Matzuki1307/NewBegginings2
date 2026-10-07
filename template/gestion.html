@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bandeja de tickets - New Beginnings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/assets/JS/tailwind-config.js"></script>
+    <script src="/assets/JS/app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header id="app-header"></header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Bandeja de tickets</h1>
+            <p class="text-gray-600 mt-1">Solicitudes de todos los usuarios. Abre un ticket para atenderlo.</p>
+        </div>
+
+        <!-- Filtros -->
+        <form id="filtros" class="bg-white rounded-lg shadow-sm p-4 mb-6 grid gap-4 md:grid-cols-4 md:items-end">
+            <div class="md:col-span-2">
+                <label for="q" class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+                <input id="q" type="search" placeholder="Nombre, documento, correo o número de ticket (T-12)"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+            <div>
+                <label for="estado" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                <select id="estado" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option value="">Todos</option>
+                    <option>Pendiente</option>
+                    <option>En proceso</option>
+                    <option>Resuelto</option>
+                    <option>Cerrado</option>
+                </select>
+            </div>
+            <div>
+                <label for="asignado" class="block text-sm font-medium text-gray-700 mb-1">Responsable</label>
+                <select id="asignado" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option value="">Todos</option>
+                    <option value="yo">Asignados a mí</option>
+                    <option value="sin">Sin asignar</option>
+                </select>
+            </div>
+        </form>
+
+        <p id="error" class="hidden mb-4 p-3 rounded-md bg-red-50 text-red-700 text-sm"></p>
+
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        <tr>
+                            <th class="px-4 py-3">Ticket</th>
+                            <th class="px-4 py-3">Solicitante</th>
+                            <th class="px-4 py-3">Situación</th>
+                            <th class="px-4 py-3">Departamento</th>
+                            <th class="px-4 py-3">Responsable</th>
+                            <th class="px-4 py-3">Estado</th>
+                            <th class="px-4 py-3">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla" class="divide-y divide-gray-100">
+                        <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p id="total" class="text-sm text-gray-500 mt-3"></p>
+    </main>
+
+    <script>
+        const tabla = document.getElementById('tabla');
+
+        async function cargar() {
+            const params = new URLSearchParams();
+            for (const id of ['q', 'estado', 'asignado']) {
+                const valor = document.getElementById(id).value.trim();
+                if (valor) params.set(id, valor);
+            }
+            history.replaceState(null, '', params.toString() ? '?' + params : location.pathname);
+
+            try {
+                const tickets = await App.api('/api/tickets?' + params);
+                App.error(document.getElementById('error'), '');
+                document.getElementById('total').textContent =
+                    tickets.length === 200 ? 'Mostrando los 200 tickets más recientes.' : `${tickets.length} ticket(s).`;
+
+                if (tickets.length === 0) {
+                    tabla.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">No hay tickets con estos filtros.</td></tr>';
+                    return;
+                }
+                tabla.innerHTML = tickets.map(t => `
+                    <tr class="hover:bg-gray-50 cursor-pointer" data-id="${t.Id}">
+                        <td class="px-4 py-3 font-medium"><a href="/tickets/${t.Id}" class="text-primary hover:underline">T-${t.Id}</a></td>
+                        <td class="px-4 py-3">
+                            <div class="font-medium text-gray-900">${App.escapar(t.Nombre || 'Sin nombre')}</div>
+                            <div class="text-xs text-gray-500">${App.escapar(t.NumeroId || '')} · ${App.escapar(t.Email)}</div>
+                        </td>
+                        <td class="px-4 py-3">${App.escapar(t.Situacion || '-')}</td>
+                        <td class="px-4 py-3">${App.escapar(t.Departamento || '-')}</td>
+                        <td class="px-4 py-3">${t.Responsable ? App.escapar(t.Responsable) : '<span class="text-amber-700">Sin asignar</span>'}</td>
+                        <td class="px-4 py-3">${App.estadoBadge(t.Estado)}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-500">${App.fecha(t.FechaCreacion)}</td>
+                    </tr>`).join('');
+            } catch (error) {
+                App.error(document.getElementById('error'), error.message);
+                tabla.innerHTML = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await App.iniciar();
+
+            // Restaura los filtros de la URL (al volver desde un ticket)
+            const params = new URLSearchParams(location.search);
+            for (const id of ['q', 'estado', 'asignado']) {
+                if (params.has(id)) document.getElementById(id).value = params.get(id);
+            }
+
+            let espera;
+            document.getElementById('q').addEventListener('input', () => {
+                clearTimeout(espera);
+                espera = setTimeout(cargar, 300);
+            });
+            document.getElementById('estado').addEventListener('change', cargar);
+            document.getElementById('asignado').addEventListener('change', cargar);
+            document.getElementById('filtros').addEventListener('submit', e => { e.preventDefault(); cargar(); });
+
+            // Toda la fila abre el ticket
+            tabla.addEventListener('click', e => {
+                const fila = e.target.closest('tr[data-id]');
+                if (fila && !e.target.closest('a')) location.href = '/tickets/' + fila.dataset.id;
+            });
+
+            cargar();
+        });
+    </script>
+</body>
+</html>

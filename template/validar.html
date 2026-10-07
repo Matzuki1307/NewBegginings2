@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestión de Tickets - New Beginnings</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/assets/JS/app.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -57,8 +58,7 @@
             </div>
           </button>
           <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden">
-            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mi perfil</a>
-            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Configuración</a>
+            <a href="/panel" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mi panel</a>
             <div class="border-t border-gray-100"></div>
             <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cerrar sesión</a>
           </div>
@@ -83,7 +83,7 @@
         <div class="flex-grow">
           <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Buscar tickets</label>
           <div class="relative">
-            <input type="text" id="search" name="search" placeholder="Buscar por nombre, email o descripción..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+            <input type="text" id="search" name="search" placeholder="Buscar por número, nombre, correo o situación..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
@@ -95,10 +95,10 @@
           <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
           <select id="status" name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
             <option value="">Todos</option>
-            <option value="nuevo">Nuevo</option>
-            <option value="en-proceso">En proceso</option>
-            <option value="resuelto">Resuelto</option>
-            <option value="cerrado">Cerrado</option>
+            <option>Pendiente</option>
+            <option>En proceso</option>
+            <option>Resuelto</option>
+            <option>Cerrado</option>
           </select>
         </div>
         <div class="w-full md:w-48">
@@ -227,105 +227,76 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async function() {
-      // Mostrar el nombre real del usuario
-      try {
-        const userRes = await fetch('/api/usuario');
-        if (userRes.status === 401) {
-          window.location.href = '/login?redirect=/validar';
-          return;
-        }
-        const userData = await userRes.json();
-        document.querySelector('span.text-gray-700').textContent = `Bienvenido, ${userData.nombre}`;
-      } catch (e) {
-        window.location.href = '/login?redirect=/validar';
-        return;
-      }
+      // Mostrar el nombre real del usuario (si la sesión expiró, App.api manda al login)
+      const usuario = await App.api('/api/me');
+      document.querySelector('span.text-gray-700').textContent = `Bienvenido, ${usuario.nombre}`;
+      document.querySelector('#userMenuButton span').textContent =
+        ((usuario.nombre || ' ')[0] + (usuario.apellido || ' ')[0]).trim().toUpperCase();
 
       // Consultar los tickets del usuario logueado
       let tickets = [];
       try {
-        const res = await fetch('/api/mis-tickets');
-        if (res.status === 401) {
-          window.location.href = '/login?redirect=/validar';
-          return;
-        }
-        tickets = await res.json();
-      } catch (e) {
+        tickets = await App.api('/api/mis-tickets');
+      } catch (error) {
         document.getElementById('ticketsTable').innerHTML = `
-          <tr><td colspan="6" class="text-center text-red-600 py-6">No se pudieron cargar los tickets o no tienes tickets registrados.</td></tr>
-        `;
+          <tr><td colspan="7" class="text-center text-red-600 py-6">${App.escapar(error.message)}</td></tr>`;
         return;
       }
 
-      // Función para traducir y colorear el estado
-      function estadoTextoYColor(estado) {
-        switch (estado.toLowerCase()) {
-          case 'pendiente':
-            return { texto: 'Pendiente', color: 'bg-blue-100 text-blue-800' };
-          case 'resuelto':
-            return { texto: 'Resuelto', color: 'bg-green-100 text-green-800' };
-          default:
-            return { texto: estado, color: 'bg-gray-100 text-gray-800' };
-        }
-      }
-
-      // Renderizar tickets
+      // Renderizar tickets (el texto se escapa porque lo escriben los usuarios)
       function renderTickets(ticketsToRender) {
         const tableBody = document.getElementById('ticketsTable');
-        tableBody.innerHTML = '';
 
         if (ticketsToRender.length === 0) {
-          tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-6">No tienes tickets registrados.</td></tr>`;
+          tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-6">${
+            tickets.length === 0 ? 'No tienes tickets registrados.' : 'Ningún ticket coincide con los filtros.'}</td></tr>`;
           return;
         }
 
-        ticketsToRender.forEach(ticket => {
-          const estado = estadoTextoYColor(ticket.Estado);
-          const fecha = new Date(ticket.FechaCreacion);
-          const fechaFormateada = fecha.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
-
-          // Botón solo si está resuelto
-          let encuestaBtn = '';
-          if (ticket.Estado && ticket.Estado.toLowerCase() === 'resuelto') {
-            encuestaBtn = `<button onclick="window.location.href='/satisfaccion'" class="bg-primary hover:bg-primary-dark text-white px-3 py-1 rounded text-xs transition-colors">Evaluar atención</button>`;
-          }
-
-          const row = document.createElement('tr');
-          row.className = 'hover:bg-gray-50';
-          row.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">T-${ticket.Id}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900">${ticket.Nombre || ''}</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900">${ticket.Email || ''}</div>
-            </td>
-            <td class="px-6 py-4">
-              <div class="text-sm text-gray-900">${ticket.Situacion || '-'}</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${estado.color}">
-                ${estado.texto}
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${fechaFormateada}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-center">${encuestaBtn}</td>
-          `;
-          tableBody.appendChild(row);
-        });
-
-        // Agrega eventos a los botones de ver detalles si lo necesitas
-        // ...
+        tableBody.innerHTML = ticketsToRender.map(ticket => {
+          // La encuesta se habilita cuando el ticket está resuelto o cerrado
+          const encuestaBtn = ['Resuelto', 'Cerrado'].includes(ticket.Estado)
+            ? `<a href="/satisfaccion" class="bg-primary hover:bg-primary-dark text-white px-3 py-1 rounded text-xs transition-colors">Evaluar atención</a>`
+            : '';
+          return `
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium"><a href="/tickets/${ticket.Id}" class="text-primary hover:underline">T-${ticket.Id}</a></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${App.escapar(ticket.Nombre || '')}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${App.escapar(ticket.Email || '')}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${App.escapar(ticket.Situacion || '-')}</td>
+              <td class="px-6 py-4 whitespace-nowrap">${App.estadoBadge(ticket.Estado)}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${App.fecha(ticket.FechaCreacion)}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-center">${encuestaBtn}</td>
+            </tr>`;
+        }).join('');
       }
+
+      // Filtros por texto, estado y fecha
+      function aplicarFiltros() {
+        const texto = document.getElementById('search').value.trim().toLowerCase();
+        const estado = document.getElementById('status').value;
+        const periodo = document.getElementById('date').value;
+        const ahora = new Date();
+        const desde = {
+          today: new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()),
+          week: new Date(ahora.getTime() - 7 * 24 * 60 * 60 * 1000),
+          month: new Date(ahora.getFullYear(), ahora.getMonth(), 1),
+          year: new Date(ahora.getFullYear(), 0, 1)
+        }[periodo];
+
+        renderTickets(tickets.filter(t =>
+          (!texto || [`t-${t.Id}`, t.Nombre, t.Email, t.Situacion].some(v => String(v || '').toLowerCase().includes(texto)))
+          && (!estado || t.Estado === estado)
+          && (!desde || new Date(t.FechaCreacion) >= desde)));
+      }
+
+      document.getElementById('applyFilters').addEventListener('click', aplicarFiltros);
+      document.getElementById('search').addEventListener('input', aplicarFiltros);
+      document.getElementById('status').addEventListener('change', aplicarFiltros);
+      document.getElementById('date').addEventListener('change', aplicarFiltros);
 
       // Inicializar la tabla con todos los tickets del usuario
       renderTickets(tickets);
-
-      // Puedes agregar aquí la lógica de filtros si lo deseas, usando el array "tickets"
     });
 
     // Abrir/cerrar el menú de usuario (y cerrarlo al hacer clic fuera)

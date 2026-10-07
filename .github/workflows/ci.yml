@@ -30,8 +30,32 @@ jobs:
           curl -fsS -c cookies.txt -X POST http://localhost:3000/api/login -H 'Content-Type: application/json' \
             -d '{"email":"ci@test.com","password":"Password1"}'
           curl -fsS -b cookies.txt -X POST http://localhost:3000/api/formulario -H 'Content-Type: application/json' \
-            -d '{"nombre":"CI Test","tipoId":1,"numeroId":"123","genero":1,"telefono":"300","situacionId":1,"departamento":1}'
+            -d '{"nombre":"CI Test","tipoId":1,"numeroId":"123456","genero":1,"telefono":"3001234567","situacionId":1,"departamento":1}'
           curl -fsS -b cookies.txt http://localhost:3000/api/mis-tickets | grep -q "Pendiente"
+          # Un usuario normal no puede entrar a la bandeja de funcionarios
+          test "$(curl -s -o /dev/null -w '%{http_code}' -b cookies.txt http://localhost:3000/api/tickets)" = "403"
+
+      - name: Prueba de roles (administrador y funcionario)
+        run: |
+          set -e
+          B=http://localhost:3000
+          # El administrador inicial (docker-compose.yml) crea un funcionario
+          curl -fsS -c admin.txt -X POST $B/api/login -H 'Content-Type: application/json' \
+            -d '{"email":"admin@newbeginnings.local","password":"Admin1234"}'
+          ROL=$(curl -fsS -b admin.txt $B/api/roles | grep -o '"id":[0-9]*,"nombre":"Funcionario"' | grep -o '[0-9]*' | head -1)
+          curl -fsS -b admin.txt -X POST $B/api/usuarios -H 'Content-Type: application/json' \
+            -d "{\"nombre\":\"Func\",\"apellido\":\"CI\",\"email\":\"func@test.com\",\"password\":\"Password1\",\"rolId\":$ROL}"
+          # El funcionario ve la bandeja, cambia el estado, se asigna y cierra el ticket
+          curl -fsS -c func.txt -X POST $B/api/login -H 'Content-Type: application/json' \
+            -d '{"email":"func@test.com","password":"Password1"}'
+          ID=$(curl -fsS -b func.txt $B/api/tickets | grep -o '"Id":[0-9]*' | head -1 | grep -o '[0-9]*')
+          FUNC=$(curl -fsS -b func.txt $B/api/me | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+          curl -fsS -b func.txt -X PATCH $B/api/tickets/$ID/estado -H 'Content-Type: application/json' -d '{"estado":"En proceso"}'
+          curl -fsS -b func.txt -X PATCH $B/api/tickets/$ID/asignar -H 'Content-Type: application/json' -d "{\"funcionarioId\":$FUNC}"
+          curl -fsS -b func.txt -X POST $B/api/tickets/$ID/cerrar -H 'Content-Type: application/json' -d '{"observacion":"Cerrado por CI"}'
+          curl -fsS -b func.txt $B/api/tickets/$ID/historial | grep -q "Cierre"
+          # El funcionario no puede administrar usuarios
+          test "$(curl -s -o /dev/null -w '%{http_code}' -b func.txt $B/api/usuarios)" = "403"
 
       - name: Logs si algo falla
         if: failure()

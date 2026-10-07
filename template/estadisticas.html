@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas - New Beginnings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/assets/JS/tailwind-config.js"></script>
+    <script src="/assets/JS/app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header id="app-header"></header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Estadísticas</h1>
+                <p class="text-gray-600 mt-1">Resumen del estado de las solicitudes.</p>
+            </div>
+            <button id="actualizar" class="text-sm border border-gray-300 text-gray-700 hover:bg-gray-100 py-2 px-4 rounded-md">Actualizar</button>
+        </div>
+
+        <p id="error" class="hidden mb-4 p-3 rounded-md bg-red-50 text-red-700 text-sm"></p>
+        <p id="vacio" class="hidden bg-white rounded-lg shadow-sm p-8 text-center text-gray-600">Aún no hay tickets registrados, así que no hay datos para mostrar.</p>
+
+        <div id="contenido" class="hidden space-y-6">
+            <div id="indicadores" class="grid gap-4 grid-cols-2 lg:grid-cols-5"></div>
+            <div class="grid gap-6 lg:grid-cols-2">
+                <section class="bg-white rounded-lg shadow-sm p-6"><h2 class="font-semibold text-gray-900 mb-3">Por estado</h2><div id="por-estado"></div></section>
+                <section class="bg-white rounded-lg shadow-sm p-6"><h2 class="font-semibold text-gray-900 mb-3">Por situación</h2><div id="por-situacion"></div></section>
+                <section class="bg-white rounded-lg shadow-sm p-6"><h2 class="font-semibold text-gray-900 mb-3">Departamentos con más solicitudes</h2><div id="por-departamento"></div></section>
+                <section class="bg-white rounded-lg shadow-sm p-6"><h2 class="font-semibold text-gray-900 mb-3">Tickets abiertos por responsable</h2><div id="por-responsable"></div></section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function indicador(etiqueta, valor, nota = '') {
+            return `
+                <div class="bg-white rounded-lg shadow-sm p-5">
+                    <p class="text-sm text-gray-500">${etiqueta}</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-1 tabular-nums">${valor}</p>
+                    ${nota ? `<p class="text-xs text-gray-500 mt-1">${nota}</p>` : ''}
+                </div>`;
+        }
+
+        function tabla(filas, total, vacio) {
+            if (filas.length === 0) return `<p class="text-sm text-gray-500">${vacio}</p>`;
+            return `
+                <table class="w-full text-sm">
+                    <thead class="text-left text-xs text-gray-500 uppercase">
+                        <tr><th class="py-2">Nombre</th><th class="py-2 text-right">Tickets</th><th class="py-2 text-right">%</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        ${filas.map(f => `
+                            <tr>
+                                <td class="py-2">${App.escapar(f.nombre)}</td>
+                                <td class="py-2 text-right tabular-nums font-medium">${f.total}</td>
+                                <td class="py-2 text-right tabular-nums text-gray-500">${total ? Math.round(f.total * 100 / total) : 0}%</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        async function cargar() {
+            try {
+                const e = await App.api('/api/estadisticas');
+                App.error(document.getElementById('error'), '');
+                document.getElementById('vacio').classList.toggle('hidden', e.total > 0);
+                document.getElementById('contenido').classList.toggle('hidden', e.total === 0);
+                if (e.total === 0) return;
+
+                document.getElementById('indicadores').innerHTML = [
+                    indicador('Total de tickets', e.total),
+                    indicador('Abiertos', e.abiertos, 'Sin cerrar'),
+                    indicador('Sin asignar', e.sin_asignar, 'Abiertos sin responsable'),
+                    indicador('Últimos 30 días', e.ultimos_30_dias),
+                    indicador('Tiempo de cierre', e.promedio_dias_cierre === null ? '-' : `${e.promedio_dias_cierre} d`, 'Promedio en días')
+                ].join('');
+                document.getElementById('por-estado').innerHTML = tabla(e.porEstado, e.total, '');
+                document.getElementById('por-situacion').innerHTML = tabla(e.porSituacion, e.total, '');
+                document.getElementById('por-departamento').innerHTML = tabla(e.porDepartamento, e.total, '');
+                document.getElementById('por-responsable').innerHTML = tabla(e.porResponsable, e.abiertos, 'No hay tickets abiertos asignados.');
+            } catch (error) {
+                App.error(document.getElementById('error'), error.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await App.iniciar();
+            document.getElementById('actualizar').addEventListener('click', cargar);
+            cargar();
+        });
+    </script>
+</body>
+</html>

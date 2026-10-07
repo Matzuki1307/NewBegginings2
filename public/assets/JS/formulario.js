@@ -42,6 +42,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Cargar unidades de medida
     await cargarOpciones('/api/unidades-medida', 'unidad-medida');
 
+    // Aplicar la configuración de campos del rol: visible, habilitado y obligatorio
+    const IDS_CAMPOS = {
+        nombre: 'nombre', genero: 'genero', tipoId: 'tipo-id', numeroId: 'numero-id', telefono: 'telefono',
+        situacionId: 'situacion', departamento: 'departamento', unidadMedida: 'unidad-medida', cantidad: 'cantidad'
+    };
+    try {
+        const respuesta = await fetch('/api/formulario/campos');
+        if (respuesta.ok) {
+            const campos = await respuesta.json();
+            campos.forEach(campo => {
+                const elemento = document.getElementById(IDS_CAMPOS[campo.codigo]);
+                if (!elemento) return;
+                elemento.closest('.space-y-2').classList.toggle('hidden', !campo.visible);
+                elemento.disabled = !campo.habilitado;
+                elemento.required = campo.visible && campo.habilitado && campo.obligatorio;
+                elemento.dataset.obligatorio = elemento.required;
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar la configuración de campos:', error);
+    }
+
     // Mostrar campos adicionales si la situación es "Desplazamiento forzado"
     const situacionSelect = document.getElementById('situacion');
     const camposAdicionales = document.getElementById('campos-adicionales');
@@ -49,11 +71,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     situacionSelect.addEventListener('change', () => {
         const seleccion = situacionSelect.options[situacionSelect.selectedIndex].text;
 
-        if (seleccion === 'Desplazamiento forzado') {
-            camposAdicionales.classList.remove('hidden');
-        } else {
-            camposAdicionales.classList.add('hidden');
-        }
+        const esDesplazamiento = seleccion === 'Desplazamiento forzado';
+        camposAdicionales.classList.toggle('hidden', !esDesplazamiento);
+
+        // Unidad de medida y cantidad solo son obligatorias cuando se muestran
+        ['unidad-medida', 'cantidad'].forEach(id => {
+            const campo = document.getElementById(id);
+            campo.required = esDesplazamiento && campo.dataset.obligatorio === 'true';
+        });
     });
 });
 
@@ -92,7 +117,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 alert('Formulario enviado con éxito.');
                 window.location.href = '/ticket'; // Redirige a ticket.html
             } else {
-                alert('Error al enviar el formulario.');
+                // Muestra el motivo que da el servidor (datos faltantes o no permitidos)
+                const resultado = await response.json().catch(() => ({}));
+                alert(resultado.error || 'Error al enviar el formulario.');
             }
         } catch (error) {
             console.error('Error al enviar el formulario:', error);
