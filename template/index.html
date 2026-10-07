@@ -37,6 +37,8 @@
                     <div class="lg:flex flex-col md:flex-row md:items-center text-center md:space-x-6" :class="{'hidden':!navbarOpen,'flex':navbarOpen}">
                         
                         <a href="/validar" class="px-6 py-4 border-2 border-blue-500 text-blue-500 font-semibold text-lg rounded-xl hover:bg-blue-700 hover:text-white transition ease-linear duration-500">Revisa tus tickets!</a>
+                        <!-- Solo se muestra si hay sesión iniciada -->
+                        <a href="/logout" id="logout-link" class="hidden px-6 py-4 border-2 border-gray-300 text-gray-700 font-semibold text-lg rounded-xl hover:bg-blue-700 hover:text-white transition ease-linear duration-500">Cerrar sesión</a>
                     </div>
                 </nav>
 
@@ -292,6 +294,11 @@
 
         <script>
             feather.replace()
+
+            // Muestra "Cerrar sesión" si el usuario ya inició sesión
+            fetch('/api/usuario').then(res => {
+                if (res.ok) document.getElementById('logout-link').classList.remove('hidden');
+            }).catch(() => {});
         </script>
 
     </body>

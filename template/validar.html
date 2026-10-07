@@ -327,6 +327,21 @@
 
       // Puedes agregar aquí la lógica de filtros si lo deseas, usando el array "tickets"
     });
+
+    // Abrir/cerrar el menú de usuario (y cerrarlo al hacer clic fuera)
+    document.addEventListener('DOMContentLoaded', function() {
+      const menuButton = document.getElementById('userMenuButton');
+      const menu = document.getElementById('userMenu');
+
+      menuButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        menu.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', function(e) {
+        if (!menu.contains(e.target)) menu.classList.add('hidden');
+      });
+    });
   </script>
 </body>
 </html>
