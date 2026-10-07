@@ -315,3 +315,87 @@ END $$;
 -- Los usuarios creados antes de existir los roles quedan con el rol de registro
 UPDATE usuarios SET rol_id = (SELECT id FROM roles WHERE es_registro ORDER BY id LIMIT 1)
 WHERE rol_id IS NULL;
+
+-- =====================================================================
+-- Minería de datos
+-- =====================================================================
+
+-- Cada encuesta queda ligada al ticket que evalúa
+ALTER TABLE encuestas_satisfaccion ADD COLUMN IF NOT EXISTS formulario_id INT REFERENCES formularios(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_encuestas_ticket ON encuestas_satisfaccion(formulario_id);
+
+-- Una fila por ticket con todas sus variables, lista para exportar y analizar.
+-- Las fechas se expresan en hora de Colombia.
+DROP VIEW IF EXISTS vista_mineria_tickets;
+CREATE VIEW vista_mineria_tickets AS
+WITH historial AS (
+    SELECT formulario_id,
+           MIN(fecha) FILTER (WHERE accion = 'Asignación') AS primera_asignacion,
+           COUNT(*) FILTER (WHERE accion = 'Asignación') AS asignaciones,
+           COUNT(*) FILTER (WHERE accion = 'Reapertura') AS reaperturas
+    FROM ticket_historial
+    GROUP BY formulario_id
+),
+comentarios AS (
+    SELECT c.formulario_id,
+           COUNT(*) AS comentarios,
+           COUNT(*) FILTER (WHERE c.usuario_id = f.usuario_id) AS comentarios_solicitante
+    FROM ticket_comentarios c
+    JOIN formularios f ON f.id = c.formulario_id
+    GROUP BY c.formulario_id
+)
+SELECT
+    f.id AS ticket_id,
+    f.usuario_id,
+    s.situacion,
+    d.nombre AS departamento,
+    g.descripcion AS genero,
+    ti.descripcion AS tipo_identificacion,
+    (f.fecha_creacion AT TIME ZONE 'America/Bogota') AS fecha_creacion,
+    EXTRACT(YEAR FROM f.fecha_creacion AT TIME ZONE 'America/Bogota')::int AS anio,
+    EXTRACT(MONTH FROM f.fecha_creacion AT TIME ZONE 'America/Bogota')::int AS mes,
+    EXTRACT(ISODOW FROM f.fecha_creacion AT TIME ZONE 'America/Bogota')::int AS dia_semana,
+    EXTRACT(HOUR FROM f.fecha_creacion AT TIME ZONE 'America/Bogota')::int AS hora,
+    f.estado,
+    f.funcionario_id,
+    NULLIF(CONCAT_WS(' ', fu.nombre, fu.apellido), '') AS funcionario,
+    um.nombre AS unidad_medida,
+    f.cantidad,
+    -- Tierra abandonada en hectáreas (1 fanegada ≈ 0,64 ha)
+    ROUND(CASE um.nombre
+        WHEN 'Hectáreas' THEN f.cantidad
+        WHEN 'Fanegadas' THEN f.cantidad * 0.64
+        WHEN 'Metros cuadrados' THEN f.cantidad / 10000.0
+    END, 4) AS hectareas,
+    ROUND((EXTRACT(EPOCH FROM h.primera_asignacion - f.fecha_creacion) / 3600)::numeric, 2) AS horas_hasta_asignacion,
+    ROUND((EXTRACT(EPOCH FROM f.fecha_cierre - f.fecha_creacion) / 86400)::numeric, 2) AS dias_hasta_cierre,
+    COALESCE(h.asignaciones, 0)::int AS asignaciones,
+    COALESCE(h.reaperturas, 0)::int AS reaperturas,
+    COALESCE(c.comentarios, 0)::int AS comentarios,
+    COALESCE(c.comentarios_solicitante, 0)::int AS comentarios_solicitante,
+    (SELECT COUNT(*) FROM formularios p
+     WHERE p.usuario_id = f.usuario_id AND p.fecha_creacion < f.fecha_creacion)::int AS tickets_previos_usuario,
+    e.id IS NOT NULL AS tiene_encuesta,
+    e.calificacion,
+    e.satisfaccion,
+    e.rapidez,
+    e.amabilidad,
+    e.claridad,
+    e.utilidad,
+    e.recomienda,
+    e.fuente
+FROM formularios f
+LEFT JOIN situaciones s ON s.id = f.situacion_id
+LEFT JOIN departamentos d ON d.id = f.departamento_id
+LEFT JOIN generos g ON g.id = f.genero_id
+LEFT JOIN tipos_identificacion ti ON ti.id = f.tipo_identificacion_id
+LEFT JOIN unidades_medida um ON um.id = f.unidad_medida_id
+LEFT JOIN usuarios fu ON fu.id = f.funcionario_id
+LEFT JOIN historial h ON h.formulario_id = f.id
+LEFT JOIN comentarios c ON c.formulario_id = f.id
+LEFT JOIN LATERAL (
+    SELECT * FROM encuestas_satisfaccion es
+    WHERE es.formulario_id = f.id
+    ORDER BY es.fecha_creacion DESC
+    LIMIT 1
+) e ON TRUE;

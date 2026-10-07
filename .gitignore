@@ -31,3 +31,5 @@ Thumbs.db
 
 # Scanner
 *.scannerwork/
+# Exportaciones para minería de datos
+mineria/

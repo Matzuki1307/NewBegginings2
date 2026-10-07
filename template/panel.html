@@ -15,6 +15,8 @@
         <h1 id="saludo" class="text-2xl font-bold text-gray-900">Hola</h1>
         <p id="subtitulo" class="text-gray-600 mt-1 mb-8">¿Qué quieres hacer hoy?</p>
 
+        <div id="indicadores" class="hidden grid gap-4 grid-cols-2 lg:grid-cols-4 mb-8"></div>
+
         <div id="tarjetas" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
     </main>
 
@@ -34,6 +36,21 @@
             const usuario = await App.iniciar();
             document.getElementById('saludo').textContent = `Hola, ${usuario.nombre}`;
             document.getElementById('subtitulo').textContent = `Ingresaste como ${usuario.rol}. ¿Qué quieres hacer hoy?`;
+
+            // Indicadores según el rol (si fallan, el panel sigue funcionando)
+            App.api('/api/panel/resumen').then(indicadores => {
+                const zona = document.getElementById('indicadores');
+                if (indicadores.length === 0) return;
+                zona.innerHTML = indicadores.map(i => {
+                    const contenido = `
+                        <p class="text-sm text-gray-500">${App.escapar(i.nombre)}</p>
+                        <p class="text-3xl font-bold tabular-nums mt-1 ${i.alerta ? 'text-amber-600' : 'text-gray-900'}">${i.valor.toLocaleString('es-CO')}</p>`;
+                    return i.ruta
+                        ? `<a href="${i.ruta}" class="bg-white rounded-lg shadow-sm p-5 hover:shadow-md transition">${contenido}</a>`
+                        : `<div class="bg-white rounded-lg shadow-sm p-5">${contenido}</div>`;
+                }).join('');
+                zona.classList.remove('hidden');
+            }).catch(() => {});
 
             const contenedor = document.getElementById('tarjetas');
             if (usuario.tarjetas.length === 0) {
