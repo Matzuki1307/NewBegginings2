@@ -7,7 +7,9 @@
     "node": ">=20"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "seed:demo": "node scripts/seed-demo.js",
+    "mineria:exportar": "node scripts/exportar-mineria.js"
   },
   "keywords": [],
   "author": "",

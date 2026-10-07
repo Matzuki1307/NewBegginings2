@@ -520,6 +520,7 @@
 
         // Recolectar datos del formulario
         const data = {
+          ticketId: new URLSearchParams(window.location.search).get('ticket'),
           serviceType: form.serviceType.value,
           otherService: form.otherService.value,
           serviceDate: form.serviceDate.value,

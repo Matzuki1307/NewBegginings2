@@ -423,21 +423,34 @@ router.post('/api/satisfaccion', requirePermiso('encuestas.responder'), async (r
         serviceType, otherService, serviceDate, source, rating, satisfaction,
         speedRating, kindnessRating, clarityRating, usefulnessRating,
         improvements, recommendationScore, positiveAspects, negativeAspects,
-        additionalComments, contactConsent, contactName, contactEmail
+        additionalComments, contactConsent, contactName, contactEmail, ticketId
     } = req.body;
+
+    // La encuesta se liga al ticket evaluado, solo si es del propio usuario
+    let formularioId = null;
+    if (ticketId !== undefined && ticketId !== null && ticketId !== '') {
+        const propio = esEnteroPositivo(ticketId)
+            ? (await pool.query('SELECT id FROM formularios WHERE id = $1 AND usuario_id = $2', [ticketId, req.usuario.id])).rows[0]
+            : null;
+        if (!propio) {
+            return res.status(400).json({ error: 'El ticket evaluado no es válido.' });
+        }
+        formularioId = propio.id;
+    }
 
     try {
         await pool.query(`
             INSERT INTO encuestas_satisfaccion (
                 usuario_id, tipo_servicio, otro_servicio, fecha_servicio, fuente, calificacion, satisfaccion,
                 rapidez, amabilidad, claridad, utilidad, mejoras, recomienda, aspectos_positivos,
-                aspectos_negativos, comentarios_adicionales, consentimiento_contacto, nombre_contacto, email_contacto
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+                aspectos_negativos, comentarios_adicionales, consentimiento_contacto, nombre_contacto, email_contacto,
+                formulario_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
         `, [
             req.usuario.id, serviceType, otherService, serviceDate, source,
             rating, satisfaction, speedRating, kindnessRating, clarityRating, usefulnessRating,
             improvements, recommendationScore, positiveAspects, negativeAspects,
-            additionalComments, Boolean(contactConsent), contactName, contactEmail
+            additionalComments, Boolean(contactConsent), contactName, contactEmail, formularioId
         ].map(valor => (valor === '' || valor === undefined ? null : valor))); // Campos vacíos se guardan como NULL
         res.status(201).json({ mensaje: 'Encuesta guardada con éxito.' });
     } catch (error) {

@@ -1,6 +1,6 @@
 const express = require('express');
 const { pool } = require('../DB/db');
-const { requirePermiso, tienePermiso } = require('../middleware/auth');
+const { requireLogin, requirePermiso, tienePermiso } = require('../middleware/auth');
 const { limpiar } = require('../lib/validacion');
 
 const router = express.Router();
@@ -65,6 +65,41 @@ router.get('/api/beneficiarios', requirePermiso('beneficiarios.consultar'), asyn
     }
 
     res.json([...beneficiarios.values()].slice(0, 50));
+});
+
+// Indicadores del panel de inicio según lo que el rol puede ver
+router.get('/api/panel/resumen', requireLogin, async (req, res) => {
+    const indicadores = [];
+
+    if (tienePermiso(req, 'tickets.ver_todos')) {
+        const { rows: [r] } = await pool.query(`
+            SELECT COUNT(*) FILTER (WHERE estado <> 'Cerrado')::int AS abiertos,
+                   COUNT(*) FILTER (WHERE estado <> 'Cerrado' AND funcionario_id IS NULL)::int AS sin_asignar,
+                   COUNT(*) FILTER (WHERE estado <> 'Cerrado' AND funcionario_id = $1)::int AS mios,
+                   COUNT(*) FILTER (WHERE fecha_cierre >= NOW() - INTERVAL '30 days')::int AS cerrados_30
+            FROM formularios
+        `, [req.usuario.id]);
+        indicadores.push(
+            { nombre: 'Tickets abiertos', valor: r.abiertos, ruta: '/gestion' },
+            { nombre: 'Sin asignar', valor: r.sin_asignar, ruta: '/gestion?asignado=sin', alerta: r.sin_asignar > 0 },
+            { nombre: 'Asignados a mí', valor: r.mios, ruta: '/gestion?asignado=yo' },
+            { nombre: 'Cerrados en 30 días', valor: r.cerrados_30 }
+        );
+    } else if (tienePermiso(req, 'tickets.ver_propios')) {
+        const { rows: [r] } = await pool.query(`
+            SELECT COUNT(*)::int AS total,
+                   COUNT(*) FILTER (WHERE estado <> 'Cerrado')::int AS abiertos,
+                   COUNT(*) FILTER (WHERE estado = 'Cerrado')::int AS cerrados
+            FROM formularios WHERE usuario_id = $1
+        `, [req.usuario.id]);
+        indicadores.push(
+            { nombre: 'Mis tickets', valor: r.total, ruta: '/validar' },
+            { nombre: 'En atención', valor: r.abiertos, ruta: '/validar' },
+            { nombre: 'Cerrados', valor: r.cerrados, ruta: '/validar' }
+        );
+    }
+
+    res.json(indicadores);
 });
 
 // Estadísticas de los tickets (HU15)

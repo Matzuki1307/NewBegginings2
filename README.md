@@ -44,6 +44,37 @@ Se crea al arrancar a partir de `ADMIN_EMAIL` y `ADMIN_PASSWORD` si ese correo n
 
 Con él se crean las cuentas de los funcionarios en **Usuarios**.
 
+## Datos de demostración y minería de datos
+
+[`scripts/seed-demo.js`](scripts/seed-demo.js) genera un dataset **sintético** (personas ficticias) con dos años de historia: unos 6000 tickets, 5400 solicitantes, 17 funcionarios, historial, comentarios y encuestas.
+
+```bash
+npm run seed:demo                              # 6000 tickets, semilla 2026
+npm run seed:demo -- --tickets=10000 --semilla=7
+npm run seed:demo -- --solo-limpiar            # borra solo los datos demo
+```
+
+Usa la `DATABASE_URL` del `.env`. Todo lo que crea pertenece a cuentas `@demo.newbeginnings.co` (contraseña `Demo1234`), así que se puede volver a ejecutar sin tocar los datos reales. Con la misma semilla siempre genera los mismos datos.
+
+El dataset trae patrones intencionales para descubrir:
+
+| Patrón | Dónde mirarlo |
+|---|---|
+| Desplazamiento concentrado en zonas de conflicto; violencia y maltrato según población | `situacion` × `departamento` |
+| Eventos de desplazamiento masivo (Catatumbo ene-2025, Cauca, Chocó, Sur de Bolívar) | Picos de `fecha_creacion` por departamento; más `horas_hasta_asignacion` y `dias_hasta_cierre` |
+| Más maltrato intrafamiliar en diciembre/enero y vacaciones; violencia más alta los fines de semana y de noche | `mes`, `dia_semana`, `hora` |
+| Funcionarios especializados y con distinta eficiencia | `funcionario` × `dias_hasta_cierre` |
+| La satisfacción baja con la demora y las reaperturas, y sube con el acompañamiento | `calificacion`, `recomienda` vs `dias_hasta_cierre`, `reaperturas`, `comentarios` |
+| Personas que vuelven a pedir ayuda, sobre todo por maltrato intrafamiliar | `tickets_previos_usuario` |
+| Género y documento según la situación; migrantes (PPT) en zonas de frontera | `genero`, `tipo_identificacion` × `departamento` |
+| Congestión en las últimas semanas y ~2 % de casos estancados | `estado`, `dias_hasta_cierre` atípicos |
+
+La vista **`vista_mineria_tickets`** (en [`DB/init.sql`](DB/init.sql)) tiene una fila por ticket con todas esas variables y sin datos personales. Para llevarla a Python, R, Weka o Excel:
+
+```bash
+npm run mineria:exportar          # -> mineria/tickets.csv
+```
+
 ## Tecnologías
 
 Node.js · Express 5 · PostgreSQL · Tailwind CSS · Docker · GitHub Actions · Render

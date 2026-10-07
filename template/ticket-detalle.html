@@ -104,7 +104,9 @@
 
             document.getElementById('titulo').textContent = `Ticket T-${ticket.id}`;
             document.getElementById('estado-badge').innerHTML = App.estadoBadge(ticket.estado);
-            document.getElementById('btn-encuesta').classList.toggle('hidden', !a.encuesta);
+            const btnEncuesta = document.getElementById('btn-encuesta');
+            btnEncuesta.classList.toggle('hidden', !a.encuesta);
+            btnEncuesta.href = `/satisfaccion?ticket=${ticket.id}`;
 
             const documento = [ticket.tipo_identificacion, ticket.numero_identificacion].filter(Boolean).join(' ');
             document.getElementById('datos').innerHTML = [
