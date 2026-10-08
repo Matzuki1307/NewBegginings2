@@ -6,81 +6,500 @@
     <title>Estadísticas - New Beginnings</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/assets/JS/tailwind-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="/assets/JS/app.js"></script>
+    <script src="/assets/JS/graficos.js"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-slate-50 min-h-screen">
     <header id="app-header"></header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8">
-        <div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        <!-- Encabezado y periodo -->
+        <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Estadísticas</h1>
-                <p class="text-gray-600 mt-1">Resumen del estado de las solicitudes.</p>
+                <p class="text-sm font-medium text-primary">Tablero de seguimiento</p>
+                <h1 class="text-3xl font-bold text-gray-900 mt-1">Estadísticas y KPI</h1>
+                <p id="descripcion-periodo" class="text-gray-600 mt-1">Tickets creados en todo el historial.</p>
             </div>
-            <button id="actualizar" class="text-sm border border-gray-300 text-gray-700 hover:bg-gray-100 py-2 px-4 rounded-md">Actualizar</button>
+            <div class="flex items-center gap-2">
+                <div id="periodos" class="inline-flex rounded-lg bg-white border border-gray-200 p-1 shadow-sm text-sm" role="group" aria-label="Periodo">
+                    <button data-periodo="todo" class="px-3 py-1.5 rounded-md">Todo</button>
+                    <button data-periodo="365" class="px-3 py-1.5 rounded-md">Último año</button>
+                    <button data-periodo="90" class="px-3 py-1.5 rounded-md">90 días</button>
+                    <button data-periodo="30" class="px-3 py-1.5 rounded-md">30 días</button>
+                </div>
+                <button id="actualizar" class="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50" title="Actualizar" aria-label="Actualizar">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </button>
+            </div>
         </div>
 
-        <p id="error" class="hidden mb-4 p-3 rounded-md bg-red-50 text-red-700 text-sm"></p>
-        <p id="vacio" class="hidden bg-white rounded-lg shadow-sm p-8 text-center text-gray-600">Aún no hay tickets registrados, así que no hay datos para mostrar.</p>
+        <p id="error" class="hidden p-3 rounded-lg bg-red-50 text-red-700 text-sm"></p>
+        <p id="vacio" class="hidden bg-white rounded-xl border border-gray-200 p-10 text-center text-gray-600">No hay tickets en este periodo, así que no hay datos para mostrar.</p>
 
-        <div id="contenido" class="hidden space-y-6">
-            <div id="indicadores" class="grid gap-4 grid-cols-2 lg:grid-cols-5"></div>
-            <div class="grid gap-6 lg:grid-cols-2">
-                <section class="bg-white rounded-lg shadow-sm p-6"><h2 class="font-semibold text-gray-900 mb-3">Por estado</h2><div id="por-estado"></div></section>
-                <section class="bg-white rounded-lg shadow-sm p-6"><h2 class="font-semibold text-gray-900 mb-3">Por situación</h2><div id="por-situacion"></div></section>
-                <section class="bg-white rounded-lg shadow-sm p-6"><h2 class="font-semibold text-gray-900 mb-3">Departamentos con más solicitudes</h2><div id="por-departamento"></div></section>
-                <section class="bg-white rounded-lg shadow-sm p-6"><h2 class="font-semibold text-gray-900 mb-3">Tickets abiertos por responsable</h2><div id="por-responsable"></div></section>
-            </div>
+        <div id="contenido" class="hidden space-y-8">
+            <!-- Resumen -->
+            <div id="resumen" class="grid gap-4 grid-cols-2 lg:grid-cols-4"></div>
+
+            <!-- KPI -->
+            <section>
+                <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900">Indicadores clave de desempeño</h2>
+                        <p class="text-sm text-gray-600 mt-1">Cumple al llegar a la meta; en riesgo si le falta menos del 10 %.</p>
+                    </div>
+                    <div id="conteo-estados" class="flex flex-wrap gap-2 text-sm"></div>
+                </div>
+                <div id="kpis" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+            </section>
+
+            <!-- Volumen -->
+            <section class="space-y-4">
+                <h2 class="text-xl font-semibold text-gray-900">Volumen de solicitudes</h2>
+                <div class="grid gap-4 lg:grid-cols-3">
+                    <article class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 lg:col-span-2">
+                        <h3 class="font-semibold text-gray-900">Tickets creados por situación</h3>
+                        <p id="nota-serie" class="text-sm text-gray-500 mt-0.5"></p>
+                        <div class="relative h-72 mt-4"><canvas id="g-serie" role="img" aria-label="Tickets creados por periodo y situación"></canvas></div>
+                    </article>
+                    <article class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                        <h3 class="font-semibold text-gray-900">Por situación</h3>
+                        <p id="nota-situacion" class="text-sm text-gray-500 mt-0.5"></p>
+                        <div class="relative h-72 mt-4"><canvas id="g-situacion" role="img" aria-label="Tickets por situación"></canvas></div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- Atención -->
+            <section class="space-y-4">
+                <h2 class="text-xl font-semibold text-gray-900">Tiempos de atención</h2>
+                <div class="grid gap-4 lg:grid-cols-2">
+                    <article class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                        <h3 class="font-semibold text-gray-900">Días hasta el cierre frente a la meta del ANS</h3>
+                        <p id="nota-ans" class="text-sm text-gray-500 mt-0.5"></p>
+                        <div class="relative h-72 mt-4"><canvas id="g-ans" role="img" aria-label="Mediana de días hasta el cierre por situación comparada con la meta"></canvas></div>
+                    </article>
+                    <article class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                        <h3 class="font-semibold text-gray-900">Tickets abiertos por responsable</h3>
+                        <p id="nota-responsable" class="text-sm text-gray-500 mt-0.5"></p>
+                        <div class="relative h-72 mt-4"><canvas id="g-responsable" role="img" aria-label="Tickets abiertos por funcionario"></canvas></div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- Satisfacción -->
+            <section class="space-y-4">
+                <h2 class="text-xl font-semibold text-gray-900">Satisfacción</h2>
+                <div class="grid gap-4 lg:grid-cols-2">
+                    <article class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                        <h3 class="font-semibold text-gray-900">Satisfacción (CSAT) según el tiempo hasta el cierre</h3>
+                        <p id="nota-csat" class="text-sm text-gray-500 mt-0.5"></p>
+                        <div class="relative h-72 mt-4"><canvas id="g-csat" role="img" aria-label="CSAT según los días hasta el cierre"></canvas></div>
+                    </article>
+                    <div class="grid gap-4">
+                        <article class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                            <h3 class="font-semibold text-gray-900">Calificación de cada aspecto</h3>
+                            <p id="nota-aspectos" class="text-sm text-gray-500 mt-0.5"></p>
+                            <div class="relative h-40 mt-3"><canvas id="g-aspectos" role="img" aria-label="Calificación promedio por aspecto de la atención"></canvas></div>
+                        </article>
+                        <article class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                            <h3 class="font-semibold text-gray-900">¿Recomendarían la plataforma?</h3>
+                            <p id="nota-nps" class="text-sm text-gray-500 mt-0.5"></p>
+                            <div class="relative h-20 mt-3"><canvas id="g-nps" role="img" aria-label="Detractores, pasivos y promotores"></canvas></div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Territorio -->
+            <section class="space-y-4">
+                <h2 class="text-xl font-semibold text-gray-900">Territorio</h2>
+                <article class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                    <h3 class="font-semibold text-gray-900">Departamentos con más solicitudes</h3>
+                    <p id="nota-departamentos" class="text-sm text-gray-500 mt-0.5"></p>
+                    <div class="relative h-80 mt-4"><canvas id="g-departamentos" role="img" aria-label="Diez departamentos con más tickets"></canvas></div>
+                </article>
+            </section>
         </div>
     </main>
 
     <script>
-        function indicador(etiqueta, valor, nota = '') {
+        const G = Graficos;
+        const n = (v, d = 0) => G.numero(v, d);
+        const PERIODOS = {
+            todo: 'Tickets creados en todo el historial.',
+            365: 'Tickets creados en el último año.',
+            90: 'Tickets creados en los últimos 90 días.',
+            30: 'Tickets creados en los últimos 30 días.'
+        };
+        let periodo = 'todo';
+
+        // ===== KPI =====
+
+        const ESTADOS = {
+            cumple:    { texto: 'Cumple',      clase: 'bg-green-50 text-green-800 ring-green-600/20',   color: G.color.bueno,       icono: 'M5 13l4 4L19 7' },
+            riesgo:    { texto: 'En riesgo',   clase: 'bg-amber-50 text-amber-800 ring-amber-600/20',   color: G.color.advertencia, icono: 'M12 9v4m0 4h.01' },
+            alerta:    { texto: 'Con alerta',  clase: 'bg-orange-50 text-orange-800 ring-orange-600/20', color: G.color.serio,      icono: 'M12 9v4m0 4h.01' },
+            no_cumple: { texto: 'No cumple',   clase: 'bg-red-50 text-red-800 ring-red-600/20',         color: G.color.critico,     icono: 'M6 18L18 6M6 6l12 12' },
+            pendiente: { texto: 'Sin medición', clase: 'bg-gray-100 text-gray-700 ring-gray-500/20',    color: G.color.gris,        icono: 'M12 8v4l3 3' }
+        };
+
+        function insignia(estado) {
+            const e = ESTADOS[estado];
+            return `<span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${e.clase}">
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="${e.icono}"/></svg>${e.texto}</span>`;
+        }
+
+        function valorKpi(k, valor) {
+            if (valor === null) return '—';
+            const d = Number.isInteger(valor) ? 0 : k.decimales ?? 1;
+            return k.unidad === '%' ? `${n(valor, d)} %` : k.unidad === 'h' ? `${n(valor, d)} h` : n(valor, d);
+        }
+
+        // Barra de avance: dónde está el valor frente a la meta
+        function barraKpi(k) {
+            if (k.valor === null) return '<div class="h-2 rounded-full bg-gray-100"></div>';
+            const min = k.min ?? 0;
+            const max = k.max ?? (k.unidad === '%' ? 100 : Math.max(k.valor, k.meta, 1) * 1.4);
+            const pos = v => Math.min(100, Math.max(0, (v - min) / (max - min) * 100));
             return `
-                <div class="bg-white rounded-lg shadow-sm p-5">
-                    <p class="text-sm text-gray-500">${etiqueta}</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-1 tabular-nums">${valor}</p>
-                    ${nota ? `<p class="text-xs text-gray-500 mt-1">${nota}</p>` : ''}
+                <div class="relative h-2 rounded-full bg-gray-100" aria-hidden="true">
+                    <div class="absolute inset-y-0 left-0 rounded-full" style="width:${pos(k.valor)}%;background:${ESTADOS[k.estado].color}"></div>
+                    <div class="absolute -top-1 -bottom-1 w-0.5 bg-gray-900 rounded" style="left:calc(${pos(k.meta)}% - 1px)" title="Meta"></div>
                 </div>`;
         }
 
-        function tabla(filas, total, vacio) {
-            if (filas.length === 0) return `<p class="text-sm text-gray-500">${vacio}</p>`;
+        function tarjetaKpi(k) {
+            const meta = `${k.sentido === 'min' ? '≥' : '≤'} ${valorKpi(k, k.meta)}`;
             return `
-                <table class="w-full text-sm">
-                    <thead class="text-left text-xs text-gray-500 uppercase">
-                        <tr><th class="py-2">Nombre</th><th class="py-2 text-right">Tickets</th><th class="py-2 text-right">%</th></tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        ${filas.map(f => `
-                            <tr>
-                                <td class="py-2">${App.escapar(f.nombre)}</td>
-                                <td class="py-2 text-right tabular-nums font-medium">${f.total}</td>
-                                <td class="py-2 text-right tabular-nums text-gray-500">${total ? Math.round(f.total * 100 / total) : 0}%</td>
-                            </tr>`).join('')}
-                    </tbody>
-                </table>`;
+                <article class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col">
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="text-xs font-semibold text-gray-500"><span class="tabular-nums text-gray-900">${k.id}</span> · ${k.perspectiva}</span>
+                        ${insignia(k.estado)}
+                    </div>
+                    <h4 class="mt-2 font-semibold text-gray-900 leading-snug">${App.escapar(k.nombre)}</h4>
+                    <div class="mt-3 flex items-baseline justify-between gap-2">
+                        <p class="text-3xl font-bold text-gray-900 tabular-nums">${valorKpi(k, k.valor)}</p>
+                        <p class="text-sm text-gray-500 whitespace-nowrap">Meta ${meta}</p>
+                    </div>
+                    <div class="mt-3">${barraKpi(k)}</div>
+                    ${k.nota ? `<p class="mt-2 text-xs font-medium ${k.estado === 'alerta' ? 'text-orange-700' : 'text-gray-500'}">${App.escapar(k.nota)}</p>` : ''}
+                    <p class="mt-auto pt-3 text-xs text-gray-500" title="${App.escapar(k.formula)}"><span class="font-medium text-gray-600">${k.frecuencia}.</span> ${App.escapar(k.formula)}</p>
+                </article>`;
         }
 
+        function pintarKpis(kpis) {
+            document.getElementById('kpis').innerHTML = kpis.map(tarjetaKpi).join('');
+
+            const conteo = estado => kpis.filter(k => k.estado === estado).length;
+            document.getElementById('conteo-estados').innerHTML = ['cumple', 'riesgo', 'alerta', 'no_cumple', 'pendiente']
+                .filter(e => conteo(e) > 0)
+                .map(e => `<span class="inline-flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-2.5 py-1">
+                    <span class="h-2 w-2 rounded-full" style="background:${ESTADOS[e].color}"></span>
+                    <span class="font-semibold tabular-nums">${conteo(e)}</span> ${ESTADOS[e].texto.toLowerCase()}</span>`).join('');
+        }
+
+        // ===== Resumen =====
+
+        function tile(etiqueta, valor, nota, icono) {
+            return `
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                        <span class="h-8 w-8 rounded-lg bg-blue-50 text-primary flex items-center justify-center">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="${icono}"/></svg>
+                        </span>${etiqueta}
+                    </div>
+                    <p class="text-3xl font-bold text-gray-900 tabular-nums mt-3">${valor}</p>
+                    <p class="text-xs text-gray-500 mt-1">${nota}</p>
+                </div>`;
+        }
+
+        function pintarResumen(e) {
+            const estado = nombre => e.porEstado.find(x => x.nombre === nombre).total;
+            document.getElementById('resumen').innerHTML = [
+                tile('Tickets en el periodo', n(e.total), `${n(e.cerrados)} cerrados`, 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'),
+                tile('Abiertos hoy', n(e.abiertos), `${n(estado('Pendiente'))} pendientes · ${n(estado('En proceso'))} en proceso · ${n(estado('Resuelto'))} resueltos`, 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4'),
+                tile('Sin responsable hoy', n(e.sinAsignar), 'Abiertos sin funcionario asignado', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'),
+                tile('Mediana de cierre', e.medianaCierre === null ? '—' : `${n(e.medianaCierre, 1)} d`, 'La mitad de los tickets se cierra antes', 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z')
+            ].join('');
+        }
+
+        // ===== Gráficas =====
+
+        const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        function etiquetaPeriodo(fecha, granularidad) {
+            const [a, m, d] = fecha.split('-').map(Number);
+            return granularidad === 'month' ? `${MESES[m - 1]} ${String(a).slice(2)}` : `${d} ${MESES[m - 1]}`;
+        }
+
+        function graficoSerie(e) {
+            const periodos = [...new Set(e.serie.map(f => f.periodo))];
+            const situaciones = [...new Set(e.serie.map(f => f.situacion))];
+            const unidad = e.granularidad === 'month' ? 'mes' : 'semana';
+            document.getElementById('nota-serie').textContent = periodos.length
+                ? `Por ${unidad}. Sin el primer ni el último periodo, que están incompletos.`
+                : 'El periodo es muy corto para mostrar una tendencia.';
+            G.crear('g-serie', {
+                type: 'line',
+                data: {
+                    labels: periodos.map(p => etiquetaPeriodo(p, e.granularidad)),
+                    datasets: situaciones.map(s => ({
+                        label: s,
+                        data: periodos.map(p => (e.serie.find(f => f.periodo === p && f.situacion === s) || { total: 0 }).total),
+                        borderColor: G.situacion[s], backgroundColor: G.situacion[s],
+                        borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.25
+                    }))
+                },
+                options: {
+                    interaction: { mode: 'index', intersect: false },
+                    scales: { x: G.ejeCategorias({ ticks: { color: G.color.textoSec, maxTicksLimit: 12 } }), y: G.ejeValores({ beginAtZero: true }) },
+                    plugins: { legend: { position: 'top', align: 'start' } }
+                }
+            });
+        }
+
+        function graficoSituacion(e) {
+            const total = e.porSituacion.reduce((s, x) => s + x.total, 0);
+            const mayor = e.porSituacion[0];
+            document.getElementById('nota-situacion').textContent = mayor ? `${mayor.nombre}: ${n(mayor.total * 100 / total, 1)} % del total.` : '';
+            G.crear('g-situacion', {
+                type: 'bar',
+                data: {
+                    labels: e.porSituacion.map(x => x.nombre.replace('Violencia contra la mujer', 'Violencia c. la mujer')),
+                    datasets: [{
+                        data: e.porSituacion.map(x => x.total),
+                        backgroundColor: e.porSituacion.map(x => G.situacion[x.nombre]),
+                        borderRadius: 4, maxBarThickness: 36,
+                        etiqueta: v => `${n(v * 100 / total, 1)} %`
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    layout: { padding: { right: 48 } },
+                    scales: { x: G.ejeValores({ beginAtZero: true, ticks: { display: false }, grid: { display: false } }), y: G.ejeCategorias() },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${n(c.raw)} tickets` } } }
+                }
+            });
+        }
+
+        function graficoAns(e) {
+            const datos = e.cierrePorSituacion;
+            const cerrados = datos.reduce((s, x) => s + x.cerrados, 0);
+            const cumplen = datos.reduce((s, x) => s + x.cerrados * x.cumple / 100, 0);
+            document.getElementById('nota-ans').textContent = cerrados
+                ? `Mediana de días por situación. El ${n(cumplen * 100 / cerrados, 1)} % de los tickets cerrados cumplió su meta.`
+                : 'Aún no hay tickets cerrados en este periodo.';
+            G.crear('g-ans', {
+                type: 'bar',
+                data: {
+                    labels: datos.map(x => x.nombre),
+                    datasets: [
+                        {
+                            label: 'Mediana de días', data: datos.map(x => x.mediana), order: 2,
+                            backgroundColor: G.color.acento, borderRadius: 4, maxBarThickness: 64,
+                            etiqueta: v => `${n(v, 1)} d`
+                        },
+                        {
+                            label: 'Meta del ANS', type: 'line', data: datos.map(x => x.meta), order: 1,
+                            showLine: false, pointStyle: 'line', pointRadius: 34, pointHoverRadius: 34,
+                            borderColor: G.color.texto, backgroundColor: G.color.texto, borderWidth: 3
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: G.ejeCategorias(),
+                        y: G.ejeValores({ beginAtZero: true, title: { display: true, text: 'Días', color: G.color.textoSec } })
+                    },
+                    plugins: {
+                        legend: { position: 'top', align: 'start' },
+                        tooltip: {
+                            callbacks: {
+                                label: c => c.datasetIndex === 0
+                                    ? ` Mediana: ${n(c.raw, 1)} días (${n(datos[c.dataIndex].cumple, 1)} % cumple)`
+                                    : ` Meta: ${c.raw} días`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function graficoResponsables(e) {
+            const datos = e.porResponsable;
+            const promedio = datos.length ? datos.reduce((s, x) => s + x.total, 0) / datos.length : 0;
+            document.getElementById('nota-responsable').textContent = datos.length
+                ? `Situación de hoy. Los 10 con más carga; en promedio tienen ${n(promedio, 1)} cada uno.`
+                : 'No hay tickets abiertos asignados.';
+            G.crear('g-responsable', {
+                type: 'bar',
+                data: {
+                    labels: datos.map(x => x.nombre),
+                    datasets: [{
+                        data: datos.map(x => x.total),
+                        // Se resaltan quienes están por encima del promedio
+                        backgroundColor: datos.map(x => x.total > promedio ? G.color.acento : G.color.gris),
+                        borderRadius: 4, maxBarThickness: 22,
+                        etiqueta: v => n(v)
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    layout: { padding: { right: 28, top: 18 } },
+                    scales: { x: G.ejeValores({ beginAtZero: true }), y: G.ejeCategorias() },
+                    plugins: {
+                        legend: { display: false },
+                        referencia: datos.length ? { valor: promedio, texto: 'Promedio' } : false,
+                        tooltip: { callbacks: { label: c => ` ${n(c.raw)} tickets abiertos` } }
+                    }
+                }
+            });
+        }
+
+        function graficoCsat(e) {
+            const datos = e.csatPorTiempo;
+            const primero = datos[0], ultimo = datos[datos.length - 1];
+            document.getElementById('nota-csat').textContent = datos.length > 1
+                ? `Pasa de ${n(primero.csat, 1)} % cuando se cierra en ${primero.rango.toLowerCase()} a ${n(ultimo.csat, 1)} % con ${ultimo.rango.toLowerCase()}.`
+                : 'Hay muy pocas encuestas en este periodo.';
+            G.crear('g-csat', {
+                type: 'bar',
+                data: {
+                    labels: datos.map(x => x.rango),
+                    datasets: [{
+                        data: datos.map(x => x.csat),
+                        // Rangos en orden: un solo tono, más oscuro a más demora
+                        backgroundColor: datos.map((_, i) => `rgba(42, 120, 214, ${0.45 + 0.55 * i / Math.max(1, datos.length - 1)})`),
+                        borderRadius: 4, maxBarThickness: 56,
+                        etiqueta: v => `${n(v, 1)} %`
+                    }]
+                },
+                options: {
+                    layout: { padding: { top: 16 } },
+                    scales: {
+                        x: G.ejeCategorias({ title: { display: true, text: 'Días hasta el cierre', color: G.color.textoSec } }),
+                        y: G.ejeValores({ min: 0, max: 100, ticks: { color: G.color.textoSec, callback: v => `${v} %` } })
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        referencia: { valor: 85, texto: 'Meta 85 %' },
+                        tooltip: { callbacks: { label: c => ` CSAT ${n(c.raw, 1)} % (${n(datos[c.dataIndex].encuestas)} encuestas)` } }
+                    }
+                }
+            });
+        }
+
+        function graficoAspectos(e) {
+            const datos = e.aspectos.filter(x => x.valor !== null).sort((a, b) => b.valor - a.valor);
+            const peor = datos[datos.length - 1];
+            document.getElementById('nota-aspectos').textContent = peor
+                ? `Promedio de 1 a 5. Lo peor calificado es la ${peor.nombre.toLowerCase()} (${n(peor.valor, 2)}).`
+                : 'Aún no hay encuestas en este periodo.';
+            G.crear('g-aspectos', {
+                type: 'bar',
+                data: {
+                    labels: datos.map(x => x.nombre),
+                    datasets: [{
+                        data: datos.map(x => x.valor),
+                        backgroundColor: datos.map(x => x === peor ? G.color.acento : G.color.gris),
+                        borderRadius: 4, maxBarThickness: 18,
+                        etiqueta: v => n(v, 2)
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    layout: { padding: { right: 36 } },
+                    scales: { x: G.ejeValores({ min: 0, max: 5, ticks: { stepSize: 1, color: G.color.textoSec } }), y: G.ejeCategorias() },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${n(c.raw, 2)} de 5` } } }
+                }
+            });
+        }
+
+        function graficoNps(e) {
+            const { detractores, pasivos, promotores } = e.nps;
+            const total = detractores + pasivos + promotores;
+            const pct = v => total ? v * 100 / total : 0;
+            const nps = pct(promotores) - pct(detractores);
+            document.getElementById('nota-nps').textContent = total
+                ? `NPS de ${n(nps, 1)}: ${n(pct(promotores), 1)} % de promotores menos ${n(pct(detractores), 1)} % de detractores.`
+                : 'Aún no hay encuestas en este periodo.';
+            const tramo = (label, valor, color) => ({
+                label, data: [pct(valor)], backgroundColor: color, borderColor: '#ffffff', borderWidth: { left: 0, right: 2 },
+                borderSkipped: false, barThickness: 28, etiqueta: v => `${n(v, 0)} %`, etiquetaDentro: true, cantidad: valor
+            });
+            G.crear('g-nps', {
+                type: 'bar',
+                data: {
+                    labels: ['Encuestas'],
+                    datasets: [
+                        tramo('Detractores (0-6)', detractores, G.color.critico),
+                        tramo('Pasivos (7-8)', pasivos, '#8f8e88'),
+                        tramo('Promotores (9-10)', promotores, G.color.bueno)
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    scales: { x: { stacked: true, display: false, max: 100 }, y: { stacked: true, display: false } },
+                    plugins: {
+                        legend: { position: 'bottom', align: 'start' },
+                        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${n(c.raw, 1)} % (${n(c.dataset.cantidad)})` } }
+                    }
+                }
+            });
+        }
+
+        function graficoDepartamentos(e) {
+            const datos = e.porDepartamento;
+            const top3 = datos.slice(0, 3).reduce((s, x) => s + x.total, 0);
+            document.getElementById('nota-departamentos').textContent = datos.length
+                ? `Los tres primeros concentran el ${n(top3 * 100 / e.total, 1)} % de los tickets del periodo.`
+                : '';
+            G.crear('g-departamentos', {
+                type: 'bar',
+                data: {
+                    labels: datos.map(x => x.nombre),
+                    datasets: [{
+                        data: datos.map(x => x.total),
+                        backgroundColor: G.color.acento, borderRadius: 4, maxBarThickness: 22,
+                        etiqueta: v => n(v)
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    layout: { padding: { right: 40 } },
+                    scales: { x: G.ejeValores({ beginAtZero: true }), y: G.ejeCategorias() },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${n(c.raw)} tickets` } } }
+                }
+            });
+        }
+
+        // ===== Carga =====
+
         async function cargar() {
+            document.querySelectorAll('#periodos button').forEach(b => {
+                const activo = b.dataset.periodo === periodo;
+                b.className = `px-3 py-1.5 rounded-md ${activo ? 'bg-primary text-white font-medium' : 'text-gray-600 hover:bg-gray-100'}`;
+                b.setAttribute('aria-pressed', activo);
+            });
+            document.getElementById('descripcion-periodo').textContent =
+                `${PERIODOS[periodo]} Los indicadores marcados como "situación de hoy" no dependen del periodo.`;
             try {
-                const e = await App.api('/api/estadisticas');
+                const e = await App.api(`/api/estadisticas?periodo=${periodo}`);
                 App.error(document.getElementById('error'), '');
                 document.getElementById('vacio').classList.toggle('hidden', e.total > 0);
                 document.getElementById('contenido').classList.toggle('hidden', e.total === 0);
                 if (e.total === 0) return;
 
-                document.getElementById('indicadores').innerHTML = [
-                    indicador('Total de tickets', e.total),
-                    indicador('Abiertos', e.abiertos, 'Sin cerrar'),
-                    indicador('Sin asignar', e.sin_asignar, 'Abiertos sin responsable'),
-                    indicador('Últimos 30 días', e.ultimos_30_dias),
-                    indicador('Tiempo de cierre', e.promedio_dias_cierre === null ? '-' : `${e.promedio_dias_cierre} d`, 'Promedio en días')
-                ].join('');
-                document.getElementById('por-estado').innerHTML = tabla(e.porEstado, e.total, '');
-                document.getElementById('por-situacion').innerHTML = tabla(e.porSituacion, e.total, '');
-                document.getElementById('por-departamento').innerHTML = tabla(e.porDepartamento, e.total, '');
-                document.getElementById('por-responsable').innerHTML = tabla(e.porResponsable, e.abiertos, 'No hay tickets abiertos asignados.');
+                pintarResumen(e);
+                pintarKpis(e.kpis);
+                graficoSerie(e);
+                graficoSituacion(e);
+                graficoAns(e);
+                graficoResponsables(e);
+                graficoCsat(e);
+                graficoAspectos(e);
+                graficoNps(e);
+                graficoDepartamentos(e);
             } catch (error) {
                 App.error(document.getElementById('error'), error.message);
             }
@@ -88,6 +507,14 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             await App.iniciar();
+            G.configurar();
+            try { periodo = localStorage.getItem('estadisticas.periodo') || 'todo'; } catch (e) { /* sin almacenamiento */ }
+            if (!PERIODOS[periodo]) periodo = 'todo';
+            document.querySelectorAll('#periodos button').forEach(b => b.addEventListener('click', () => {
+                periodo = b.dataset.periodo;
+                try { localStorage.setItem('estadisticas.periodo', periodo); } catch (e) { /* sin almacenamiento */ }
+                cargar();
+            }));
             document.getElementById('actualizar').addEventListener('click', cargar);
             cargar();
         });
