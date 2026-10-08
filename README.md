@@ -17,7 +17,7 @@ Plataforma web que orienta a víctimas de **desplazamiento forzado**, **violenci
 **Administración**
 - Gestión de usuarios: crear funcionarios, editar, activar y desactivar
 - Roles configurables: permisos, tarjetas visibles en el panel y campos del formulario (visible, habilitado, obligatorio) por rol
-- Estadísticas de los tickets
+- Estadísticas y KPI: los 13 indicadores del documento de KPI con su meta y su estado (cumple, en riesgo, no cumple), y gráficas de volumen, tiempos de atención, satisfacción y territorio, filtrables por periodo
 
 Cada funcionalidad corresponde a una historia de usuario (HU1–HU15) del documento de referencia.
 
