@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelado - New Beginnings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/assets/JS/tailwind-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="/assets/JS/app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header id="app-header"></header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Modelado y simulación</h1>
+            <p class="text-gray-600 mt-1">Proyección de los tickets pendientes con un modelo determinístico y uno estocástico, a partir de los datos reales.</p>
+        </div>
+
+        <p id="error" class="hidden p-3 rounded-md bg-red-50 text-red-700 text-sm"></p>
+
+        <!-- Qué es cada modelo -->
+        <div class="grid gap-4 md:grid-cols-2">
+            <section class="bg-white rounded-lg shadow-sm p-6 border-t-4" style="border-top-color:#eb6834">
+                <h2 class="font-semibold text-gray-900">Modelo determinístico</h2>
+                <p class="text-sm text-gray-600 mt-2">Supone que cada día llegan exactamente <b>λ</b> tickets y los funcionarios cierran exactamente <b>c · μ</b>. Con los mismos parámetros siempre da el mismo resultado.</p>
+                <p class="text-sm text-gray-800 mt-3 font-mono bg-gray-50 rounded px-3 py-2">B(t+1) = máx(0, B(t) + λ − c · μ)</p>
+            </section>
+            <section class="bg-white rounded-lg shadow-sm p-6 border-t-4" style="border-top-color:#2a78d6">
+                <h2 class="font-semibold text-gray-900">Modelo estocástico (Monte Carlo)</h2>
+                <p class="text-sm text-gray-600 mt-2">Las llegadas y los cierres de cada día son <b>variables aleatorias</b> de Poisson con esas mismas medias, o se toman de los días observados. Se repite la simulación muchas veces y el resultado es una <b>distribución de probabilidad</b>.</p>
+                <p class="text-sm text-gray-800 mt-3 font-mono bg-gray-50 rounded px-3 py-2">A(t) ~ Poisson(λ) · S(t) ~ Poisson(c · μ)</p>
+            </section>
+        </div>
+
+        <!-- Parámetros -->
+        <section class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="font-semibold text-gray-900">Parámetros</h2>
+                    <p id="origen" class="text-sm text-gray-500 mt-1">Cargando los datos observados…</p>
+                </div>
+                <label class="text-sm text-gray-700">Estimar con
+                    <select id="ventana" class="ml-1 border border-gray-300 rounded-md px-2 py-1.5 text-sm">
+                        <option value="30">últimos 30 días</option>
+                        <option value="90" selected>últimos 90 días</option>
+                        <option value="180">últimos 180 días</option>
+                        <option value="365">último año</option>
+                    </select>
+                </label>
+            </div>
+
+            <form id="parametros" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <label class="text-sm text-gray-700">Llegadas por día (λ)
+                    <input name="lambda" type="number" step="0.01" min="0" max="1000" required class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 tabular-nums">
+                </label>
+                <label class="text-sm text-gray-700">Funcionarios (c)
+                    <input name="c" type="number" step="1" min="0" max="500" required class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 tabular-nums">
+                </label>
+                <label class="text-sm text-gray-700">Cierres por funcionario al día (μ)
+                    <input name="mu" type="number" step="0.01" min="0" max="100" required class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 tabular-nums">
+                </label>
+                <label class="text-sm text-gray-700">Tickets pendientes hoy (B₀)
+                    <input name="b0" type="number" step="1" min="0" max="100000" required class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 tabular-nums">
+                </label>
+                <label class="text-sm text-gray-700">Horizonte
+                    <select name="horizonte" class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="30">30 días</option>
+                        <option value="60">60 días</option>
+                        <option value="90" selected>90 días</option>
+                        <option value="180">180 días</option>
+                    </select>
+                </label>
+                <label class="text-sm text-gray-700">Llegadas en la simulación
+                    <select name="llegadas" class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="poisson">Distribución de Poisson</option>
+                        <option value="historico">Días observados (remuestreo)</option>
+                    </select>
+                </label>
+                <label class="text-sm text-gray-700">Simulaciones
+                    <select name="iteraciones" class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="500">500</option>
+                        <option value="1000" selected>1.000</option>
+                        <option value="5000">5.000</option>
+                    </select>
+                </label>
+                <label class="text-sm text-gray-700">Semilla aleatoria
+                    <input name="semilla" type="number" step="1" min="1" max="999999" value="2026" required class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 tabular-nums">
+                </label>
+                <label class="text-sm text-gray-700">Umbral de alerta (tickets pendientes)
+                    <input name="umbral" type="number" step="1" min="0" max="100000" required class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 tabular-nums">
+                </label>
+                <div class="flex items-end gap-2 sm:col-span-1 lg:col-span-3">
+                    <button type="submit" class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-5 rounded-md">Simular</button>
+                    <button type="button" id="restablecer" class="text-sm border border-gray-300 text-gray-700 hover:bg-gray-100 py-2 px-4 rounded-md">Usar valores observados</button>
+                </div>
+            </form>
+
+            <div id="observado" class="mt-5 grid gap-3 grid-cols-2 lg:grid-cols-4 text-sm"></div>
+        </section>
+
+        <!-- Resultados -->
+        <div id="resultados" class="hidden space-y-6">
+            <div class="grid gap-4 lg:grid-cols-2">
+                <section class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="font-semibold text-gray-900 mb-3">Resultado determinístico</h2>
+                    <div id="ind-det" class="grid gap-3 grid-cols-2"></div>
+                </section>
+                <section class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="font-semibold text-gray-900 mb-3">Resultado estocástico</h2>
+                    <div id="ind-est" class="grid gap-3 grid-cols-2"></div>
+                </section>
+            </div>
+
+            <section class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="font-semibold text-gray-900">Tickets pendientes proyectados</h2>
+                <p class="text-sm text-gray-500 mt-1 mb-4">La franja azul contiene el 90 % de las simulaciones (percentiles 5 a 95).</p>
+                <div class="relative h-80"><canvas id="grafico-proyeccion" aria-label="Proyección de tickets pendientes por día"></canvas></div>
+            </section>
+
+            <section class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="font-semibold text-gray-900">Distribución de los pendientes al final del horizonte</h2>
+                <p class="text-sm text-gray-500 mt-1 mb-4">Cuántas simulaciones terminaron en cada rango. El modelo determinístico da un solo valor: <span id="det-final" class="font-medium text-gray-800"></span>.</p>
+                <div class="relative h-64"><canvas id="grafico-distribucion" aria-label="Histograma de tickets pendientes al final"></canvas></div>
+            </section>
+
+            <section class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="font-semibold text-gray-900 mb-2">Interpretación</h2>
+                <div id="interpretacion" class="text-sm text-gray-700 space-y-2"></div>
+            </section>
+
+            <details class="bg-white rounded-lg shadow-sm p-6">
+                <summary class="font-semibold text-gray-900 cursor-pointer">Ver la proyección en tabla</summary>
+                <div class="overflow-x-auto mt-4"><table id="tabla" class="w-full text-sm"></table></div>
+            </details>
+        </div>
+    </main>
+
+    <script>
+        const COLOR_DET = '#eb6834';
+        const COLOR_EST = '#2a78d6';
+        const numero = (valor, decimales = 0) => Number(valor).toLocaleString('es-CO', { maximumFractionDigits: decimales, minimumFractionDigits: decimales });
+
+        let observado = null;
+        const graficos = {};
+
+        // ===== Azar reproducible =====
+
+        // Generador pseudoaleatorio con semilla: la misma semilla da la misma simulación
+        function mulberry32(semilla) {
+            let a = semilla;
+            return () => {
+                a |= 0; a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+
+        // Poisson por el método de Knuth; para medias grandes, aproximación normal
+        function poisson(media, azar) {
+            if (media <= 0) return 0;
+            if (media > 50) {
+                const z = Math.sqrt(-2 * Math.log(1 - azar())) * Math.cos(2 * Math.PI * azar());
+                return Math.max(0, Math.round(media + Math.sqrt(media) * z));
+            }
+            const limite = Math.exp(-media);
+            let k = 0, p = 1;
+            do { k++; p *= azar(); } while (p > limite);
+            return k - 1;
+        }
+
+        function percentil(ordenados, p) {
+            const i = (ordenados.length - 1) * p;
+            const bajo = Math.floor(i), alto = Math.ceil(i);
+            return ordenados[bajo] + (ordenados[alto] - ordenados[bajo]) * (i - bajo);
+        }
+
+        // ===== Modelos =====
+
+        function modeloDeterministico({ lambda, c, mu, b0, horizonte }) {
+            const capacidad = c * mu;
+            const serie = [b0];
+            for (let t = 1; t <= horizonte; t++) {
+                serie.push(Math.max(0, serie[t - 1] + lambda - capacidad));
+            }
+            return {
+                serie,
+                capacidad,
+                utilizacion: capacidad > 0 ? lambda / capacidad : Infinity,
+                // Días para dejar en cero los pendientes, si la capacidad supera la demanda
+                diasParaVaciar: b0 === 0 ? 0 : capacidad > lambda ? b0 / (capacidad - lambda) : null,
+                // Menor número de funcionarios con capacidad mayor que la demanda
+                funcionariosNecesarios: mu > 0 ? Math.floor(lambda / mu) + 1 : null
+            };
+        }
+
+        function modeloEstocastico({ lambda, c, mu, b0, horizonte, iteraciones, semilla, llegadas, umbral }) {
+            const azar = mulberry32(semilla);
+            const historico = observado.serie.map(d => d.llegadas);
+            // En el remuestreo se escalan los días observados para respetar la λ elegida
+            const escala = observado.llegadasDia > 0 ? lambda / observado.llegadasDia : 0;
+            const capacidad = c * mu;
+
+            const porDia = Array.from({ length: horizonte + 1 }, () => new Float64Array(iteraciones));
+            let crecen = 0, superan = 0, seVacian = 0;
+
+            for (let i = 0; i < iteraciones; i++) {
+                let b = b0, vacio = b0 === 0, maximo = b0;
+                porDia[0][i] = b0;
+                for (let t = 1; t <= horizonte; t++) {
+                    const a = llegadas === 'historico'
+                        ? Math.round(historico[Math.floor(azar() * historico.length)] * escala)
+                        : poisson(lambda, azar);
+                    const s = poisson(capacidad, azar);
+                    b = Math.max(0, b + a - s);
+                    porDia[t][i] = b;
+                    if (b === 0) vacio = true;
+                    if (b > maximo) maximo = b;
+                }
+                if (b > b0) crecen++;
+                if (maximo > umbral) superan++;
+                if (vacio) seVacian++;
+            }
+
+            const resumen = porDia.map(valores => {
+                const ordenados = Array.from(valores).sort((x, y) => x - y);
+                return {
+                    p5: percentil(ordenados, 0.05),
+                    p50: percentil(ordenados, 0.5),
+                    p95: percentil(ordenados, 0.95),
+                    media: ordenados.reduce((s, x) => s + x, 0) / ordenados.length
+                };
+            });
+
+            return {
+                resumen,
+                finales: Array.from(porDia[horizonte]),
+                probCrece: crecen / iteraciones,
+                probSupera: superan / iteraciones,
+                probVacia: seVacian / iteraciones
+            };
+        }
+
+        // ===== Pintar =====
+
+        function indicador(etiqueta, valor, nota = '') {
+            return `
+                <div class="rounded-md bg-gray-50 p-4">
+                    <p class="text-xs text-gray-500">${etiqueta}</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1 tabular-nums">${valor}</p>
+                    ${nota ? `<p class="text-xs text-gray-500 mt-1">${nota}</p>` : ''}
+                </div>`;
+        }
+
+        const porcentaje = p => `${numero(p * 100, p > 0 && p < 0.01 ? 1 : 0)} %`;
+
+        function pintarObservado() {
+            const o = observado;
+            const dispersion = o.llegadasDia > 0 ? o.varianzaLlegadas / o.llegadasDia : 0;
+            document.getElementById('origen').textContent =
+                `Estimados con los ${o.dias} días anteriores a hoy. Puedes cambiarlos para probar escenarios.`;
+            document.getElementById('observado').innerHTML = [
+                ['Varianza de llegadas', `${numero(o.varianzaLlegadas, 2)} (media ${numero(o.llegadasDia, 2)})`,
+                    `Índice de dispersión ${numero(dispersion, 2)}: ${dispersion > 1.3 ? 'más variable que Poisson (hay picos)' : 'cercano a 1, compatible con Poisson'}`],
+                ['Cierres por día', numero(o.cierresDia, 2), `${o.funcionariosActivos} funcionarios cerraron tickets (${o.funcionariosHabilitados} habilitados)`],
+                ['Tiempo de cierre (mediana)', o.tiempoCierre.mediana === null ? '-' : `${numero(o.tiempoCierre.mediana, 1)} días`,
+                    o.tiempoCierre.promedio === null ? '' : `Promedio ${numero(o.tiempoCierre.promedio, 1)} días`],
+                ['Tiempo de cierre (percentil 90)', o.tiempoCierre.p90 === null ? '-' : `${numero(o.tiempoCierre.p90, 1)} días`, '9 de cada 10 tickets se cierran antes'],
+            ].map(([etiqueta, valor, nota]) => `
+                <div class="rounded-md border border-gray-200 p-3">
+                    <p class="text-xs text-gray-500">${etiqueta}</p>
+                    <p class="font-semibold text-gray-900 tabular-nums mt-0.5">${valor}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">${nota}</p>
+                </div>`).join('');
+        }
+
+        function restablecer() {
+            const f = document.getElementById('parametros');
+            f.lambda.value = observado.llegadasDia;
+            f.c.value = observado.funcionariosActivos;
+            f.mu.value = observado.cierresFuncionarioDia;
+            f.b0.value = observado.backlog;
+            f.umbral.value = Math.max(50, Math.round(observado.backlog * 1.5));
+        }
+
+        function leerParametros() {
+            const f = document.getElementById('parametros');
+            return {
+                lambda: Number(f.lambda.value),
+                c: Number(f.c.value),
+                mu: Number(f.mu.value),
+                b0: Number(f.b0.value),
+                horizonte: Number(f.horizonte.value),
+                iteraciones: Number(f.iteraciones.value),
+                semilla: Number(f.semilla.value),
+                llegadas: f.llegadas.value,
+                umbral: Number(f.umbral.value)
+            };
+        }
+
+        function grafico(id, config) {
+            if (graficos[id]) graficos[id].destroy();
+            graficos[id] = new Chart(document.getElementById(id), config);
+        }
+
+        const ejes = {
+            grid: { color: '#eeeeee' },
+            border: { display: false },
+            ticks: { color: '#52514e' }
+        };
+
+        function pintarProyeccion(p, det, est) {
+            const etiquetas = det.serie.map((_, t) => t === 0 ? 'Hoy' : `Día ${t}`);
+            grafico('grafico-proyeccion', {
+                type: 'line',
+                data: {
+                    labels: etiquetas,
+                    datasets: [
+                        { label: 'Percentil 5', data: est.resumen.map(r => r.p5), borderWidth: 0, pointRadius: 0, fill: false },
+                        { label: 'Intervalo 90 % (estocástico)', data: est.resumen.map(r => r.p95), borderWidth: 0, pointRadius: 0,
+                          backgroundColor: 'rgba(42, 120, 214, 0.15)', fill: '-1' },
+                        { label: 'Mediana estocástica', data: est.resumen.map(r => r.p50), borderColor: COLOR_EST, backgroundColor: COLOR_EST,
+                          borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.2 },
+                        { label: 'Determinístico', data: det.serie, borderColor: COLOR_DET, backgroundColor: COLOR_DET,
+                          borderWidth: 2, borderDash: [6, 4], pointRadius: 0, pointHoverRadius: 4 }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: { ...ejes, grid: { display: false }, ticks: { ...ejes.ticks, maxTicksLimit: 10 } },
+                        y: { ...ejes, beginAtZero: true, title: { display: true, text: 'Tickets pendientes', color: '#52514e' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#0b0b0b', filter: item => item.text !== 'Percentil 5', usePointStyle: true, pointStyle: 'line' } },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.dataset.label === 'Intervalo 90 % (estocástico)' ? 'Percentil 95' : ctx.dataset.label}: ${numero(ctx.parsed.y)}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function pintarDistribucion(det, est) {
+            const finales = est.finales;
+            const minimo = Math.min(...finales), maximo = Math.max(...finales);
+            const cubetas = Math.min(20, Math.max(1, maximo - minimo + 1));
+            const ancho = Math.max(1, Math.ceil((maximo - minimo + 1) / cubetas));
+            const conteos = Array(Math.ceil((maximo - minimo + 1) / ancho)).fill(0);
+            finales.forEach(v => conteos[Math.floor((v - minimo) / ancho)]++);
+            const etiquetas = conteos.map((_, i) => {
+                const desde = minimo + i * ancho, hasta = desde + ancho - 1;
+                return ancho === 1 ? numero(desde) : `${numero(desde)}–${numero(hasta)}`;
+            });
+
+            document.getElementById('det-final').textContent = `${numero(det.serie[det.serie.length - 1])} tickets`;
+            grafico('grafico-distribucion', {
+                type: 'bar',
+                data: {
+                    labels: etiquetas,
+                    datasets: [{ label: 'Simulaciones', data: conteos, backgroundColor: COLOR_EST, borderRadius: 4,
+                                 borderSkipped: 'bottom', borderColor: '#ffffff', borderWidth: { left: 1, right: 1 } }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ...ejes, grid: { display: false }, title: { display: true, text: 'Tickets pendientes al final', color: '#52514e' } },
+                        y: { ...ejes, beginAtZero: true, title: { display: true, text: 'Simulaciones', color: '#52514e' } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => ` ${numero(ctx.parsed.y)} simulaciones (${porcentaje(ctx.parsed.y / finales.length)})` } }
+                    }
+                }
+            });
+        }
+
+        function pintarTabla(det, est) {
+            const paso = det.serie.length > 61 ? 10 : 5;
+            const filas = det.serie.map((v, t) => ({ t, v })).filter(({ t }) => t % paso === 0 || t === det.serie.length - 1);
+            document.getElementById('tabla').innerHTML = `
+                <thead class="text-left text-xs text-gray-500 uppercase">
+                    <tr><th class="py-2">Día</th><th class="py-2 text-right">Determinístico</th><th class="py-2 text-right">Percentil 5</th>
+                        <th class="py-2 text-right">Mediana</th><th class="py-2 text-right">Media</th><th class="py-2 text-right">Percentil 95</th></tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 tabular-nums">
+                    ${filas.map(({ t, v }) => {
+                        const r = est.resumen[t];
+                        return `<tr><td class="py-2">${t === 0 ? 'Hoy' : t}</td><td class="py-2 text-right">${numero(v, 1)}</td>
+                            <td class="py-2 text-right">${numero(r.p5)}</td><td class="py-2 text-right">${numero(r.p50)}</td>
+                            <td class="py-2 text-right">${numero(r.media, 1)}</td><td class="py-2 text-right">${numero(r.p95)}</td></tr>`;
+                    }).join('')}
+                </tbody>`;
+        }
+
+        function pintarInterpretacion(p, det, est) {
+            const finalDet = det.serie[det.serie.length - 1];
+            const fin = est.resumen[est.resumen.length - 1];
+            const parrafos = [];
+
+            if (det.utilizacion >= 1) {
+                parrafos.push(`La demanda (${numero(p.lambda, 2)} tickets/día) iguala o supera la capacidad (${numero(det.capacidad, 2)} cierres/día): la utilización es de ${porcentaje(det.utilizacion)}. Según el modelo determinístico los pendientes nunca bajan; hacen falta al menos <b>${det.funcionariosNecesarios} funcionarios</b> con la productividad actual.`);
+            } else {
+                parrafos.push(`La capacidad (${numero(det.capacidad, 2)} cierres/día) supera la demanda (${numero(p.lambda, 2)} tickets/día), con una utilización de ${porcentaje(det.utilizacion)}. El modelo determinístico ${p.b0 > 0 ? `deja los pendientes en cero en unos <b>${numero(det.diasParaVaciar, 0)} días</b>` : 'mantiene los pendientes en cero'}.`);
+            }
+
+            parrafos.push(`En ${p.horizonte} días el modelo determinístico predice <b>${numero(finalDet)}</b> tickets pendientes. La simulación estocástica da una mediana de <b>${numero(fin.p50)}</b>, y con un 90 % de probabilidad el valor estará entre <b>${numero(fin.p5)}</b> y <b>${numero(fin.p95)}</b>.`);
+
+            const diferencia = fin.media - finalDet;
+            if (Math.abs(diferencia) >= Math.max(5, finalDet * 0.1)) {
+                parrafos.push(`La media simulada (${numero(fin.media)}) ${diferencia > 0 ? 'queda por encima' : 'queda por debajo'} del valor determinístico. Pasa porque los pendientes no pueden ser negativos: los días buenos no "guardan" capacidad para los días malos, así que la variabilidad por sí sola genera congestión. El modelo determinístico no captura este efecto, sobre todo cuando la utilización está cerca del 100 %.`);
+            }
+
+            parrafos.push(`Probabilidad de que los pendientes terminen por encima de los actuales: <b>${porcentaje(est.probCrece)}</b>. Probabilidad de superar en algún momento el umbral de ${numero(p.umbral)}: <b>${porcentaje(est.probSupera)}</b>.`);
+            document.getElementById('interpretacion').innerHTML = parrafos.map(t => `<p>${t}</p>`).join('');
+        }
+
+        function simular() {
+            const p = leerParametros();
+            const det = modeloDeterministico(p);
+            const est = modeloEstocastico(p);
+            const finalDet = det.serie[det.serie.length - 1];
+            const fin = est.resumen[est.resumen.length - 1];
+
+            document.getElementById('ind-det').innerHTML = [
+                indicador('Utilización (λ / c·μ)', Number.isFinite(det.utilizacion) ? porcentaje(det.utilizacion) : '-', det.utilizacion >= 1 ? 'Saturado: la demanda supera la capacidad' : 'Hay capacidad libre'),
+                indicador(`Pendientes en ${p.horizonte} días`, numero(finalDet), `Hoy: ${numero(p.b0)}`),
+                indicador('Días para vaciar', det.diasParaVaciar === null ? 'Nunca' : numero(det.diasParaVaciar), 'Con la capacidad actual'),
+                indicador('Funcionarios necesarios', det.funcionariosNecesarios ?? '-', 'Para que la capacidad supere la demanda')
+            ].join('');
+            document.getElementById('ind-est').innerHTML = [
+                indicador(`Pendientes en ${p.horizonte} días (mediana)`, numero(fin.p50), `Media ${numero(fin.media, 1)}`),
+                indicador('Intervalo del 90 %', `${numero(fin.p5)} – ${numero(fin.p95)}`, 'Percentiles 5 y 95'),
+                indicador('Probabilidad de que crezcan', porcentaje(est.probCrece), 'Terminar por encima de hoy'),
+                indicador('Probabilidad de alerta', porcentaje(est.probSupera), `Superar ${numero(p.umbral)} en algún momento`)
+            ].join('');
+
+            pintarProyeccion(p, det, est);
+            pintarDistribucion(det, est);
+            pintarTabla(det, est);
+            pintarInterpretacion(p, det, est);
+            document.getElementById('resultados').classList.remove('hidden');
+        }
+
+        async function cargar(dias) {
+            try {
+                observado = await App.api(`/api/modelado/parametros?dias=${dias}`);
+                App.error(document.getElementById('error'), '');
+                pintarObservado();
+                restablecer();
+                simular();
+            } catch (error) {
+                App.error(document.getElementById('error'), error.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await App.iniciar();
+            Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+
+            const formulario = document.getElementById('parametros');
+            formulario.addEventListener('submit', e => {
+                e.preventDefault();
+                if (observado) simular();
+            });
+            document.getElementById('restablecer').addEventListener('click', () => {
+                if (!observado) return;
+                restablecer();
+                simular();
+            });
+            document.getElementById('ventana').addEventListener('change', e => cargar(e.target.value));
+            cargar(document.getElementById('ventana').value);
+        });
+    </script>
+</body>
+</html>
