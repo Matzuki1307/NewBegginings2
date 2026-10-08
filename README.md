@@ -75,6 +75,17 @@ La vista **`vista_mineria_tickets`** (en [`DB/init.sql`](DB/init.sql)) tiene una
 npm run mineria:exportar          # -> mineria/tickets.csv
 ```
 
+## Modelado y simulación
+
+La sección **Modelado** (`/modelado`, permiso `modelado.ver`) trata la atención como una cola: llegan **λ** tickets por día, **c** funcionarios cierran **μ** tickets cada uno por día y lo que no se cierra queda pendiente. Los parámetros se estiman con los datos reales de los últimos 30, 90, 180 o 365 días y se pueden modificar para probar escenarios.
+
+| Modelo | Cómo funciona | Resultado |
+|---|---|---|
+| **Determinístico** | `B(t+1) = máx(0, B(t) + λ − c·μ)`, sin azar | Un único valor: utilización, pendientes al final, días para vaciar y funcionarios necesarios |
+| **Estocástico (Monte Carlo)** | Llegadas `~ Poisson(λ)` (o remuestreo de los días observados) y cierres `~ Poisson(c·μ)`, repetido cientos de veces con una semilla | Una distribución: mediana, intervalo del 90 % y probabilidad de que los pendientes crezcan o superen un umbral |
+
+La página compara ambas proyecciones en una gráfica y explica la diferencia: cuando la utilización está cerca del 100 %, la variabilidad diaria genera congestión que el modelo determinístico no ve. Por defecto solo la ve el Administrador; se puede habilitar para otros roles desde **Roles y permisos**.
+
 ## Tecnologías
 
 Node.js · Express 5 · PostgreSQL · Tailwind CSS · Docker · GitHub Actions · Render
