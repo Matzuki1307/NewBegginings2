@@ -7,3 +7,7 @@ npm-debug.log*
 .idea
 Porsiaca.txt
 README.md
+
+# Exportaciones de datos (no deben ir en la imagen)
+mineria/
+exportacion-bd/
