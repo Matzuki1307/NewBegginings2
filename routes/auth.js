@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const rateLimit = require('express-rate-limit');
 const { pool } = require('../DB/db');
 const { requireLogin } = require('../middleware/auth');
 const { obtenerTarjetasRol } = require('../lib/configuracion');
@@ -7,8 +8,27 @@ const { limpiar, esEmail, esTelefono, esPasswordSegura, MENSAJE_PASSWORD } = req
 
 const router = express.Router();
 
+// Freno a la fuerza bruta: limita los intentos por IP en login y registro.
+// Los intentos exitosos no cuentan, para no castigar al usuario legítimo.
+const limiteLogin = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 10,
+    skipSuccessfulRequests: true,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.' }
+});
+
+const limiteRegistro = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hora
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Demasiados registros desde esta red. Inténtalo más tarde.' }
+});
+
 // Ruta para registrar usuario (siempre recibe el rol de registro)
-router.post('/api/registro', async (req, res) => {
+router.post('/api/registro', limiteRegistro, async (req, res) => {
     const nombre = limpiar(req.body.nombre);
     const apellido = limpiar(req.body.apellido);
     const email = limpiar(req.body.email);
@@ -53,7 +73,7 @@ router.post('/api/registro', async (req, res) => {
 });
 
 // Ruta para iniciar sesión
-router.post('/api/login', async (req, res) => {
+router.post('/api/login', limiteLogin, async (req, res) => {
     const { email, password } = req.body;
 
     // Validación básica

@@ -69,18 +69,24 @@ async function validarUsuario(body, esNuevo) {
         return { error: MENSAJE_PASSWORD };
     }
     const rol = esEnteroPositivo(datos.rolId)
-        ? (await pool.query('SELECT id FROM roles WHERE id = $1', [datos.rolId])).rows[0]
+        ? (await pool.query('SELECT id, es_admin FROM roles WHERE id = $1', [datos.rolId])).rows[0]
         : null;
     if (!rol) {
         return { error: 'El rol seleccionado no existe.' };
     }
     datos.rolId = rol.id;
+    datos.rolEsAdmin = rol.es_admin;
     return { datos };
 }
 
 router.post('/api/usuarios', gestionUsuarios, async (req, res) => {
     const { datos, ...error } = await validarUsuario(req.body, true);
     if (!datos) return res.status(400).json(error);
+
+    // Solo un administrador puede crear otras cuentas de administrador (evita la escalada de privilegios)
+    if (datos.rolEsAdmin && !req.usuario.es_admin) {
+        return res.status(403).json({ error: 'Solo un administrador puede crear cuentas de administrador.' });
+    }
 
     const existe = await pool.query('SELECT id FROM usuarios WHERE LOWER(email) = LOWER($1)', [datos.email]);
     if (existe.rows.length > 0) {
@@ -97,12 +103,23 @@ router.post('/api/usuarios', gestionUsuarios, async (req, res) => {
 
 router.put('/api/usuarios/:id', gestionUsuarios, async (req, res) => {
     const usuario = esEnteroPositivo(req.params.id)
-        ? (await pool.query('SELECT id, rol_id FROM usuarios WHERE id = $1', [req.params.id])).rows[0]
+        ? (await pool.query(`SELECT u.id, u.rol_id, r.es_admin
+                             FROM usuarios u JOIN roles r ON r.id = u.rol_id WHERE u.id = $1`, [req.params.id])).rows[0]
         : null;
     if (!usuario) return res.status(404).json({ error: 'El usuario no existe.' });
 
+    // Una cuenta de administrador solo la puede editar otro administrador (evita el secuestro de la cuenta)
+    if (usuario.es_admin && !req.usuario.es_admin) {
+        return res.status(403).json({ error: 'Solo un administrador puede editar cuentas de administrador.' });
+    }
+
     const { datos, ...error } = await validarUsuario(req.body, false);
     if (!datos) return res.status(400).json(error);
+
+    // Solo un administrador puede otorgar el rol de administrador
+    if (datos.rolEsAdmin && !req.usuario.es_admin) {
+        return res.status(403).json({ error: 'Solo un administrador puede asignar el rol de administrador.' });
+    }
 
     if (usuario.id === req.usuario.id && datos.rolId !== usuario.rol_id) {
         return res.status(400).json({ error: 'No puedes cambiar tu propio rol.' });
@@ -132,9 +149,18 @@ router.patch('/api/usuarios/:id/activo', gestionUsuarios, async (req, res) => {
     if (Number(req.params.id) === req.usuario.id) {
         return res.status(400).json({ error: 'No puedes desactivar tu propia cuenta.' });
     }
-    const { rowCount } = esEnteroPositivo(req.params.id)
-        ? await pool.query('UPDATE usuarios SET activo = $1 WHERE id = $2', [req.body.activo, req.params.id])
-        : { rowCount: 0 };
+
+    const objetivo = esEnteroPositivo(req.params.id)
+        ? (await pool.query(`SELECT r.es_admin FROM usuarios u JOIN roles r ON r.id = u.rol_id WHERE u.id = $1`, [req.params.id])).rows[0]
+        : null;
+    if (!objetivo) return res.status(404).json({ error: 'El usuario no existe.' });
+
+    // Solo un administrador puede activar o desactivar a otro administrador
+    if (objetivo.es_admin && !req.usuario.es_admin) {
+        return res.status(403).json({ error: 'Solo un administrador puede activar o desactivar cuentas de administrador.' });
+    }
+
+    const { rowCount } = await pool.query('UPDATE usuarios SET activo = $1 WHERE id = $2', [req.body.activo, req.params.id]);
     if (rowCount === 0) return res.status(404).json({ error: 'El usuario no existe.' });
 
     res.json({ mensaje: req.body.activo ? 'Usuario activado.' : 'Usuario desactivado.' });

@@ -38,6 +38,7 @@ app.use(session({
     cookie: {
         secure: isProduction, // Solo por HTTPS en producción
         httpOnly: true,
+        sameSite: 'lax', // La cookie no viaja en peticiones desde otros sitios (mitiga CSRF)
         maxAge: 1000 * 60 * 60 * 24 // 1 día
     }
 }));
