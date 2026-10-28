@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minería de datos - New Beginnings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/assets/JS/tailwind-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="/assets/JS/app.js"></script>
+    <script src="/assets/JS/graficos.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <header id="app-header"></header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <p class="text-sm font-medium text-primary">Descubrimiento de patrones</p>
+                <h1 class="text-3xl font-bold text-gray-900 mt-1">Minería de datos</h1>
+                <p class="text-gray-600 mt-1 max-w-3xl">¿Qué patrones esconden los tickets? Esta sección busca grupos de casos parecidos, reglas del tipo «si pasa esto, suele pasar aquello» y predice qué tickets están en riesgo de demorarse.</p>
+            </div>
+            <button id="actualizar" type="button" class="text-sm border border-gray-300 text-gray-700 hover:bg-gray-100 bg-white py-2 px-4 rounded-md">Actualizar datos</button>
+        </div>
+
+        <!-- Cómo se entrenó -->
+        <section class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+            <div class="grid gap-5 md:grid-cols-12 md:items-center">
+                <div class="md:col-span-7">
+                    <h2 class="font-semibold text-gray-900">Cómo se entrenan los modelos: 70 % y 30 %</h2>
+                    <p class="text-sm text-gray-600 mt-1">Los tickets se reparten al azar en dos partes. Los modelos aprenden solo con el <b>70 %</b> (entrenamiento) y luego se ponen a prueba con el <b>30 %</b> restante, que nunca vieron. Así se comprueba que lo aprendido funciona con casos nuevos y no solo con los que ya conocían. La partición usa siempre la misma semilla, por eso los resultados se pueden repetir.</p>
+                </div>
+                <div class="md:col-span-5">
+                    <div class="flex h-9 rounded-lg overflow-hidden text-xs font-semibold text-white" role="img" aria-label="70 % de los tickets para entrenar y 30 % para probar">
+                        <div class="bg-primary flex items-center justify-center" style="width:70%">Entrenamiento 70 %</div>
+                        <div class="bg-gray-900 flex items-center justify-center" style="width:30%">Prueba 30 %</div>
+                    </div>
+                    <p id="reparto" class="text-xs text-gray-500 mt-2"></p>
+                </div>
+            </div>
+        </section>
+
+        <p id="error" class="hidden p-3 rounded-lg bg-red-50 text-red-700 text-sm" role="alert"></p>
+
+        <!-- Pestañas -->
+        <div class="border-b border-gray-200 flex gap-6 text-sm overflow-x-auto" role="tablist" aria-label="Análisis de minería de datos">
+            <button id="pestana-grupos" data-pestana="grupos" role="tab" aria-controls="panel-grupos" class="py-3 border-b-2 font-medium whitespace-nowrap">1. Grupos de casos</button>
+            <button id="pestana-reglas" data-pestana="reglas" role="tab" aria-controls="panel-reglas" class="py-3 border-b-2 font-medium whitespace-nowrap">2. Reglas de asociación</button>
+            <button id="pestana-riesgo" data-pestana="riesgo" role="tab" aria-controls="panel-riesgo" class="py-3 border-b-2 font-medium whitespace-nowrap">3. Riesgo de demora</button>
+        </div>
+
+        <!-- ===== 1. Grupos ===== -->
+        <section id="panel-grupos" role="tabpanel" aria-labelledby="pestana-grupos" class="hidden space-y-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <p class="text-gray-600 max-w-3xl">El algoritmo <b>k-means</b> junta los tickets que se parecen (misma situación, región, perfil de la persona, época del año...) sin que nadie le diga cuáles son los grupos. Después se describe cada grupo y cómo se atendió.</p>
+                <label class="text-sm font-medium text-gray-700">Número de grupos
+                    <select id="k" class="mt-1 block border border-gray-300 rounded-md px-3 py-2 text-sm bg-white">
+                        <option value="auto">Automático (el mejor)</option>
+                        <option>2</option><option>3</option><option>4</option><option>5</option>
+                        <option>6</option><option>7</option><option>8</option>
+                    </select>
+                </label>
+            </div>
+            <div id="estado-grupos" class="text-sm text-gray-500"></div>
+            <div id="contenido-grupos" class="hidden space-y-6">
+                <div id="g-resumen" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></div>
+                <p id="g-lectura" class="text-sm text-gray-700 bg-white rounded-xl border border-gray-200 shadow-sm p-4"></p>
+
+                <div class="grid gap-6 lg:grid-cols-12">
+                    <section class="lg:col-span-7 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                        <h2 class="font-semibold text-gray-900">Mapa de los grupos</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Cada punto es un ticket (una muestra). Los ejes resumen todas las características en dos dimensiones (<span id="g-varianza"></span> % de la variación). Círculo lleno: ticket del 70 % de entrenamiento. Círculo vacío: ticket del 30 % de prueba.</p>
+                        <div id="g-leyenda" class="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-gray-700"></div>
+                        <div class="relative h-96 mt-2"><canvas id="grafico-mapa" role="img" aria-label="Mapa de dos dimensiones con los tickets coloreados por grupo"></canvas></div>
+                    </section>
+                    <section class="lg:col-span-5 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                        <h2 class="font-semibold text-gray-900">¿Cuántos grupos conviene?</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Se probó de 2 a 8 grupos con el 70 % de entrenamiento. La <b>silueta</b> mide qué tan separados quedan (entre más alta, mejor).</p>
+                        <div class="relative h-72 mt-4"><canvas id="grafico-silueta" role="img" aria-label="Silueta según el número de grupos"></canvas></div>
+                    </section>
+                </div>
+
+                <div>
+                    <h2 class="font-semibold text-gray-900 mb-3">Los grupos, uno por uno</h2>
+                    <div id="g-tarjetas" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+                </div>
+
+                <details class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                    <summary class="font-semibold text-gray-900 cursor-pointer">¿Cómo se hizo?</summary>
+                    <ol class="list-decimal pl-5 mt-3 space-y-1.5 text-sm text-gray-700">
+                        <li>Cada ticket se convierte en números: las categorías (situación, región, horario...) en columnas de 0 y 1, y el mes en seno y coseno para que diciembre quede junto a enero. Variables usadas: <span id="g-variables"></span>.</li>
+                        <li>Con el 70 % se prueba k-means para varios números de grupos. Se parte de centros elegidos con k-means++ y se repite cinco veces cada prueba para quedarse con la mejor.</li>
+                        <li>Se elige el número de grupos con mayor silueta (en automático, desde 3 grupos, porque hay tres situaciones).</li>
+                        <li>Con el 30 % de prueba se asigna cada ticket al centro más cercano y se vuelve a medir la silueta: si es parecida, los grupos se sostienen con casos nuevos.</li>
+                        <li>La situación, el departamento y la atención (días de cierre, cumplimiento del ANS, satisfacción) <b>no obligan</b> a formar los grupos de una u otra manera; sirven para describirlos.</li>
+                    </ol>
+                </details>
+            </div>
+        </section>
+
+        <!-- ===== 2. Reglas ===== -->
+        <section id="panel-reglas" role="tabpanel" aria-labelledby="pestana-reglas" class="hidden space-y-6">
+            <p class="text-gray-600 max-w-3xl">Las <b>reglas de asociación</b> encuentran combinaciones que se repiten: «si el ticket cumple A y B, entonces suele cumplir C». Se buscan con el 70 % de los tickets y se comprueban con el 30 % de prueba.</p>
+            <form id="controles-reglas" class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
+                <label class="text-xs font-medium text-gray-700">Soporte mínimo
+                    <select id="r-soporte" class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white">
+                        <option value="0.005">0,5 % de los tickets</option>
+                        <option value="0.01" selected>1 % de los tickets</option>
+                        <option value="0.02">2 % de los tickets</option>
+                        <option value="0.05">5 % de los tickets</option>
+                    </select>
+                </label>
+                <label class="text-xs font-medium text-gray-700">Confianza mínima
+                    <select id="r-confianza" class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white">
+                        <option value="0.4">40 %</option><option value="0.5">50 %</option>
+                        <option value="0.6" selected>60 %</option><option value="0.7">70 %</option><option value="0.8">80 %</option>
+                    </select>
+                </label>
+                <label class="text-xs font-medium text-gray-700">Tema de la conclusión
+                    <select id="r-tema" class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white"><option value="">Todos</option></select>
+                </label>
+                <label class="text-xs font-medium text-gray-700">Ordenar por
+                    <select id="r-orden" class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white">
+                        <option value="lift">Lift (más sorprendentes)</option>
+                        <option value="confianza">Confianza</option>
+                        <option value="soporte">Soporte (más frecuentes)</option>
+                    </select>
+                </label>
+                <label class="flex items-center gap-2 text-sm text-gray-700 pb-2">
+                    <input id="r-estables" type="checkbox" class="h-4 w-4 rounded border-gray-300"> Solo las que se sostienen en la prueba
+                </label>
+            </form>
+            <div id="estado-reglas" class="text-sm text-gray-500"></div>
+            <div id="contenido-reglas" class="hidden space-y-6">
+                <div id="r-resumen" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></div>
+                <div id="r-destacada" class="hidden rounded-xl border border-blue-200 bg-blue-50 p-5">
+                    <p class="text-xs font-semibold text-primary-dark uppercase tracking-wide">Una regla para ejemplificar</p>
+                    <p id="r-frase" class="text-gray-900 mt-1"></p>
+                </div>
+
+                <div class="grid gap-6 lg:grid-cols-12">
+                    <section class="lg:col-span-8 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        <div class="px-5 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2">
+                            <h2 class="font-semibold text-gray-900">Reglas encontradas</h2>
+                            <p id="r-conteo" class="text-xs text-gray-500"></p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 min-w-[18rem]">Si el ticket tiene...</th>
+                                        <th scope="col" class="px-4 py-3 min-w-[11rem]">...entonces suele tener</th>
+                                        <th scope="col" class="px-4 py-3 text-right">Casos</th>
+                                        <th scope="col" class="px-4 py-3 text-right" title="Porcentaje de tickets que cumple la regla completa">Soporte</th>
+                                        <th scope="col" class="px-4 py-3 text-right" title="De los tickets con la condición, cuántos tienen también la conclusión">Confianza</th>
+                                        <th scope="col" class="px-4 py-3 text-right" title="Cuántas veces es más probable la conclusión que en general">Lift</th>
+                                        <th scope="col" class="px-4 py-3 text-right" title="Confianza medida en el 30 % de prueba">Confianza en prueba</th>
+                                        <th scope="col" class="px-4 py-3">¿Se sostiene?</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="r-tabla" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                        <div class="px-5 py-3 border-t border-gray-100 text-center"><button id="r-mas" type="button" class="hidden text-sm text-primary-dark hover:underline">Mostrar más reglas</button></div>
+                    </section>
+                    <section class="lg:col-span-4 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                        <h2 class="font-semibold text-gray-900">Soporte contra confianza</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Cada punto es una regla. Las más útiles están arriba (muy ciertas) y a la derecha (frecuentes).</p>
+                        <div class="relative h-80 mt-4"><canvas id="grafico-reglas" role="img" aria-label="Soporte y confianza de cada regla"></canvas></div>
+                    </section>
+                </div>
+
+                <details class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                    <summary class="font-semibold text-gray-900 cursor-pointer">¿Cómo leer los números y cómo se hizo?</summary>
+                    <div class="mt-3 space-y-2 text-sm text-gray-700">
+                        <p><b>Soporte:</b> qué porcentaje de todos los tickets cumple la regla completa. Un soporte bajo significa que la regla describe pocos casos.</p>
+                        <p><b>Confianza:</b> de los tickets que cumplen la condición, qué porcentaje cumple también la conclusión.</p>
+                        <p><b>Lift:</b> confianza dividida entre la frecuencia normal de la conclusión. Con 1 no hay relación; con 3, la conclusión es tres veces más probable de lo normal.</p>
+                        <p><b>¿Se sostiene?:</b> la regla se encontró con el 70 % de entrenamiento. Se marca como estable si en el 30 % de prueba su confianza cambia menos de 10 puntos y su lift sigue siendo mayor que 1.</p>
+                        <p>Solo se muestran reglas con lift de 1,2 o más. Las reglas con dos condiciones solo se conservan si mejoran claramente a las de una. Se dejaron fuera dos variables que solo producían reglas obvias: la tierra abandonada (el formulario solo la pide en desplazamiento) y la demanda reciente del departamento (se calcula con el propio departamento).</p>
+                        <p>Un ticket cuenta como <b>incumplido</b> cuando se cerró después de la meta (ANS) de su situación. Solo se usan tickets cuyo plazo ya venció, para saberlo con certeza.</p>
+                    </div>
+                </details>
+            </div>
+        </section>
+
+        <!-- ===== 3. Riesgo ===== -->
+        <section id="panel-riesgo" role="tabpanel" aria-labelledby="pestana-riesgo" class="hidden space-y-6">
+            <p class="text-gray-600 max-w-3xl">¿Qué tickets se van a demorar? Se entrenan modelos que aprenden de los tickets pasados si se cerraron dentro de la meta (ANS) de su situación, y se usan para señalar los tickets abiertos que están en riesgo.</p>
+            <div id="estado-riesgo" class="text-sm text-gray-500"></div>
+            <div id="contenido-riesgo" class="hidden space-y-6">
+                <div class="grid gap-4 lg:grid-cols-3">
+                    <section class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 lg:col-span-2">
+                        <h2 class="font-semibold text-gray-900">¿Qué se predice?</h2>
+                        <p class="text-sm text-gray-700 mt-1">Un ticket tiene <b>demora</b> cuando se cierra después de la meta de cierre (ANS) de su situación:</p>
+                        <div id="ri-metas" class="flex flex-wrap gap-2 mt-2"></div>
+                        <p id="ri-datos" class="text-sm text-gray-600 mt-3"></p>
+                        <p class="text-xs text-gray-500 mt-2">Solo se entrena con tickets cuyo plazo ya venció, porque en esos se sabe con certeza si hubo demora. Un ticket reciente que sigue abierto todavía podría cerrarse a tiempo, y si se incluyera como «a tiempo» el modelo aprendería mal.</p>
+                    </section>
+                    <section class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                        <h2 class="font-semibold text-gray-900">Partición 70 / 30</h2>
+                        <dl id="ri-reparto" class="mt-2 text-sm divide-y divide-gray-100"></dl>
+                    </section>
+                </div>
+
+                <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div class="px-5 py-3 border-b border-gray-100">
+                        <h2 class="font-semibold text-gray-900">Comparación de modelos (con el 30 % de prueba)</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Todos se miden con los mismos tickets que no vieron al entrenar. <b>AUC:</b> 0,5 equivale a adivinar y 1 a no equivocarse nunca. <b>Exactitud balanceada:</b> promedio de acertar los casos con demora y los que no (0,5 = no saber nada).</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3">Modelo</th>
+                                    <th scope="col" class="px-4 py-3 text-right">AUC</th>
+                                    <th scope="col" class="px-4 py-3 text-right">Exactitud</th>
+                                    <th scope="col" class="px-4 py-3 text-right">Exactitud balanceada</th>
+                                    <th scope="col" class="px-4 py-3 text-right">Precisión</th>
+                                    <th scope="col" class="px-4 py-3 text-right">Exhaustividad</th>
+                                    <th scope="col" class="px-4 py-3 text-right">F1</th>
+                                    <th scope="col" class="px-4 py-3 text-right" title="AUC con el 70 % de entrenamiento. Si es mucho mayor que el de prueba, el modelo se aprendió los casos de memoria.">AUC en entrenamiento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ri-comparacion" class="divide-y divide-gray-100 tabular-nums"></tbody>
+                        </table>
+                    </div>
+                    <p id="ri-lectura" class="px-5 py-4 border-t border-gray-100 text-sm text-gray-700"></p>
+                </section>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="text-sm font-medium text-gray-700">Ver el detalle de:</span>
+                    <div id="ri-variante" class="inline-flex rounded-md border border-gray-300 overflow-hidden text-sm" role="group" aria-label="Variante del modelo"></div>
+                    <p id="ri-variante-desc" class="text-xs text-gray-500 basis-full"></p>
+                </div>
+
+                <div class="grid gap-6 lg:grid-cols-2">
+                    <section class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                        <h2 class="font-semibold text-gray-900">Curva ROC</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Qué tan bien separa cada modelo los tickets con demora de los que no: cuántas demoras detecta (eje vertical) a cambio de cuántas falsas alarmas, o sea tickets sin demora marcados como demora (eje horizontal). Entre más se aleje de la línea punteada (azar), mejor.</p>
+                        <div class="relative h-72 mt-4"><canvas id="grafico-roc" role="img" aria-label="Curvas ROC de los modelos"></canvas></div>
+                    </section>
+                    <section class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                        <h2 class="font-semibold text-gray-900">¿Qué variables pesan más?</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Cuánto baja el AUC de prueba si se desordenan los valores de esa variable. Una barra grande: el modelo depende de ella.</p>
+                        <div class="relative h-72 mt-4"><canvas id="grafico-importancia" role="img" aria-label="Importancia de cada variable"></canvas></div>
+                    </section>
+                </div>
+
+                <div class="grid gap-6 lg:grid-cols-2">
+                    <section class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                        <h2 class="font-semibold text-gray-900">Aciertos y errores (regresión logística)</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Tickets de prueba. El modelo predice «demora» si la probabilidad es de 50 % o más.</p>
+                        <div id="ri-matriz" class="mt-4"></div>
+                    </section>
+                    <section class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                        <h2 class="font-semibold text-gray-900">¿Se puede confiar en los niveles de riesgo?</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Si el modelo funciona, los tickets de riesgo <b>alto</b> deberían incumplir mucho más que los de riesgo <b>bajo</b>. Esto es lo que pasó en los tickets de prueba:</p>
+                        <table class="w-full text-sm mt-4">
+                            <thead class="text-left text-xs text-gray-500 uppercase"><tr><th scope="col" class="py-2">Nivel</th><th scope="col" class="py-2 text-right">Tickets</th><th scope="col" class="py-2 text-right">Realmente incumplieron</th></tr></thead>
+                            <tbody id="ri-niveles" class="divide-y divide-gray-100 tabular-nums"></tbody>
+                        </table>
+                        <p class="text-xs text-gray-500 mt-3">Alto: probabilidad de 70 % o más. Medio: entre 50 % y 70 %. Bajo: menos de 50 %.</p>
+                    </section>
+                </div>
+
+                <div class="grid gap-6 lg:grid-cols-2">
+                    <details class="bg-white rounded-xl border border-gray-200 shadow-sm p-5" open>
+                        <summary class="font-semibold text-gray-900 cursor-pointer">Reglas del árbol de decisión</summary>
+                        <p class="text-sm text-gray-500 mt-2">Cada fila es un camino del árbol. Muestra qué porcentaje de los tickets con esas características tuvo demora, en entrenamiento y en prueba.</p>
+                        <div id="ri-arbol" class="mt-3 space-y-2 max-h-[34rem] overflow-y-auto pr-1"></div>
+                    </details>
+                    <details class="bg-white rounded-xl border border-gray-200 shadow-sm p-5" open>
+                        <summary class="font-semibold text-gray-900 cursor-pointer">Factores que más cambian el riesgo (regresión logística)</summary>
+                        <p class="text-sm text-gray-500 mt-2">Cuántas veces cambian las probabilidades de demora (<i>odds</i>) cuando el ticket tiene la característica, manteniendo lo demás igual. Más de 1 sube el riesgo y menos de 1 lo baja. En las variables numéricas es por cada desviación estándar adicional.</p>
+                        <table class="w-full text-sm mt-3">
+                            <thead class="text-left text-xs text-gray-500 uppercase"><tr><th scope="col" class="py-2">Característica</th><th scope="col" class="py-2 text-right">Efecto</th></tr></thead>
+                            <tbody id="ri-efectos" class="divide-y divide-gray-100 tabular-nums"></tbody>
+                        </table>
+                    </details>
+                </div>
+
+                <!-- Tickets abiertos -->
+                <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-gray-100">
+                        <h2 class="font-semibold text-gray-900">Tickets abiertos ahora</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Los tickets que aún están a tiempo se puntúan con la regresión logística: con la variante «con responsable» si ya tienen responsable y con «al crear» si todavía no. Los tickets que ya pasaron su meta están <b>vencidos</b>.</p>
+                        <div id="ri-abiertos" class="grid gap-3 grid-cols-2 lg:grid-cols-5 mt-4"></div>
+                    </div>
+                    <div class="px-5 pt-3 border-b border-gray-100 flex gap-6 text-sm" role="tablist" aria-label="Tickets abiertos">
+                        <button id="lista-enRiesgo" data-lista="enRiesgo" role="tab" class="py-2 border-b-2 font-medium">En riesgo (aún a tiempo)</button>
+                        <button id="lista-vencidos" data-lista="vencidos" role="tab" class="py-2 border-b-2 font-medium">Ya vencidos</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3">Ticket</th>
+                                    <th scope="col" class="px-4 py-3">Situación</th>
+                                    <th scope="col" class="px-4 py-3">Departamento</th>
+                                    <th scope="col" class="px-4 py-3">Estado</th>
+                                    <th scope="col" class="px-4 py-3 text-right">Días abierto / meta</th>
+                                    <th scope="col" class="px-4 py-3 text-right">Tiempo restante</th>
+                                    <th scope="col" class="px-4 py-3">Riesgo de demora</th>
+                                    <th scope="col" class="px-4 py-3">Por qué</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ri-lista" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                    <p id="ri-lista-nota" class="px-5 py-3 border-t border-gray-100 text-xs text-gray-500"></p>
+                </section>
+
+                <details class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                    <summary class="font-semibold text-gray-900 cursor-pointer">¿Cómo se hizo y qué limitaciones tiene?</summary>
+                    <ol class="list-decimal pl-5 mt-3 space-y-1.5 text-sm text-gray-700">
+                        <li>Se toman los tickets con demora conocida y se dividen en 70 % (entrenamiento) y 30 % (prueba), conservando en cada parte la misma proporción de tickets con demora.</li>
+                        <li>Las categorías se convierten en columnas de 0 y 1 y los números se estandarizan con los datos de entrenamiento. Los valores de la prueba nunca se usan para calcular nada del modelo.</li>
+                        <li>Los ajustes de cada modelo (la penalización de la regresión y la profundidad del árbol) se eligen separando una quinta parte del propio entrenamiento. La prueba no se toca hasta el final.</li>
+                        <li>Cada modelo se compara con una línea base que siempre dice «habrá demora» (la clase más común). Si un modelo no la supera, no sirve.</li>
+                        <li>La importancia de cada variable se mide desordenando sus valores en la prueba y viendo cuánto empeora el AUC.</li>
+                        <li><b>Limitaciones:</b> el modelo ayuda a priorizar, no es un veredicto. No conoce la carga real de cada funcionario ni los detalles del caso. Si los datos son pocos, los resultados cambian mucho de una partición a otra. Los datos de demostración son sintéticos.</li>
+                    </ol>
+                    <p id="ri-variables" class="text-xs text-gray-500 mt-3"></p>
+                </details>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const G = Graficos;
+        const num = (v, d = 0) => G.numero(v, d);
+        const pct = (v, d = 0) => (v === null || v === undefined ? '-' : `${num(v * 100, d)} %`);
+        const esc = t => App.escapar(t);
+
+        // Un color por grupo; siempre va acompañado de un número y del nombre
+        const PALETA = ['#2a78d6', '#eb6834', '#1baf7a', '#7b5cd6', '#c99a14', '#d03b8c', '#1b9aaa', '#6b6a66'];
+
+        const datos = { grupos: null, reglas: null, riesgo: null };
+        const cargado = { grupos: false, reglas: false, riesgo: false };
+        let pestanaActual = null;
+        let forzarActualizar = false;
+
+        // ===== Pestañas =====
+
+        function mostrarPestana(nombre) {
+            if (!['grupos', 'reglas', 'riesgo'].includes(nombre)) nombre = 'grupos';
+            pestanaActual = nombre;
+            document.querySelectorAll('[data-pestana]').forEach(b => {
+                const activa = b.dataset.pestana === nombre;
+                b.setAttribute('aria-selected', activa);
+                b.className = `py-3 border-b-2 font-medium whitespace-nowrap ${activa ? 'border-primary text-primary-dark' : 'border-transparent text-gray-500 hover:text-gray-800'}`;
+                document.getElementById(`panel-${b.dataset.pestana}`).classList.toggle('hidden', !activa);
+            });
+            history.replaceState(null, '', `#${nombre}`);
+            if (!cargado[nombre]) cargar(nombre);
+        }
+
+        async function cargar(nombre) {
+            const estado = document.getElementById(`estado-${nombre}`);
+            const contenido = document.getElementById(`contenido-${nombre}`);
+            estado.className = 'text-sm text-gray-500';
+            estado.textContent = 'Calculando… la primera vez puede tardar unos segundos.';
+            contenido.classList.add('hidden');
+            App.error(document.getElementById('error'), '');
+            const actualizar = forzarActualizar ? '&actualizar=1' : '';
+            try {
+                let url;
+                if (nombre === 'grupos') url = `/api/mineria/grupos?k=${document.getElementById('k').value}`;
+                else if (nombre === 'reglas') url = `/api/mineria/reglas?soporte=${document.getElementById('r-soporte').value}&confianza=${document.getElementById('r-confianza').value}`;
+                else url = '/api/mineria/riesgo?';
+                datos[nombre] = await App.api(url.replace('?&', '?') + actualizar);
+                cargado[nombre] = true;
+                estado.classList.add('hidden');
+                contenido.classList.remove('hidden');
+                ({ grupos: pintarGrupos, reglas: pintarReglas, riesgo: pintarRiesgo })[nombre](datos[nombre]);
+            } catch (error) {
+                estado.textContent = '';
+                App.error(document.getElementById('error'), error.message);
+            }
+        }
+
+        function noDisponible(nombre, motivo) {
+            const estado = document.getElementById(`estado-${nombre}`);
+            estado.className = 'text-sm p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900';
+            estado.textContent = motivo;
+            document.getElementById(`contenido-${nombre}`).classList.add('hidden');
+        }
+
+        function tarjetaDato(etiqueta, valor, nota = '') {
+            return `
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                    <p class="text-xs text-gray-500">${etiqueta}</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1 tabular-nums">${valor}</p>
+                    ${nota ? `<p class="text-xs text-gray-500 mt-0.5">${nota}</p>` : ''}
+                </div>`;
+        }
+
+        function actualizarReparto(division) {
+            if (!division) return;
+            document.getElementById('reparto').textContent =
+                `${num(division.entrenamiento)} tickets para entrenar y ${num(division.prueba)} para probar (de ${num(division.total)}).`;
+        }
+
+        // ===== 1. Grupos =====
+
+        function calidadSilueta(s) {
+            if (s >= 0.5) return 'fuerte: los grupos están bien separados';
+            if (s >= 0.25) return 'razonable: hay grupos reconocibles, aunque se traslapan un poco';
+            if (s > 0) return 'débil: los grupos se traslapan mucho';
+            return 'nula: no hay una estructura clara de grupos';
+        }
+
+        function pintarGrupos(r) {
+            if (!r.disponible) return noDisponible('grupos', r.motivo);
+            const estado = document.getElementById('estado-grupos');
+            estado.className = 'hidden';
+            actualizarReparto(r.division);
+
+            document.getElementById('g-resumen').innerHTML = [
+                tarjetaDato('Grupos formados', num(r.k), r.automatico ? 'Elegido automáticamente' : 'Elegido por ti'),
+                tarjetaDato('Silueta con el 70 % (entrenamiento)', num(r.silueta.entrenamiento, 3), `Estructura ${calidadSilueta(r.silueta.entrenamiento).split(':')[0]}`),
+                tarjetaDato('Silueta con el 30 % (prueba)', num(r.silueta.prueba, 3), 'Tickets que no se usaron para formar los grupos'),
+                tarjetaDato('Tickets agrupados', num(r.division.total), `${num(r.division.entrenamiento)} entrenamiento · ${num(r.division.prueba)} prueba`)
+            ].join('');
+
+            const diferencia = Math.abs(r.silueta.entrenamiento - r.silueta.prueba);
+            document.getElementById('g-lectura').innerHTML =
+                `La silueta es <b>${calidadSilueta(r.silueta.entrenamiento)}</b> (${num(r.silueta.entrenamiento, 3)}). ` +
+                (diferencia <= 0.05
+                    ? `En el 30 % de prueba es casi igual (${num(r.silueta.prueba, 3)}), así que los grupos se sostienen con tickets nuevos.`
+                    : `En el 30 % de prueba cambia bastante (${num(r.silueta.prueba, 3)}), así que los grupos no son del todo estables.`) +
+                ' Una silueta cercana a 1 indica grupos muy separados; cercana a 0, grupos que se mezclan.';
+
+            document.getElementById('g-varianza').textContent = num(r.varianzaMapa, 0);
+            document.getElementById('g-variables').textContent = r.variables.join(', ').toLowerCase();
+            document.getElementById('k').value = r.automatico ? 'auto' : String(r.k);
+
+            document.getElementById('g-leyenda').innerHTML = r.grupos.map(g =>
+                `<span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:${PALETA[(g.id - 1) % PALETA.length]}"></span><b>${g.id}</b> ${esc(g.nombre)}</span>`).join('');
+
+            const colorDe = g => PALETA[(g - 1) % PALETA.length];
+            G.crear('grafico-mapa', {
+                type: 'scatter',
+                data: {
+                    datasets: r.grupos.map(g => {
+                        const puntos = r.puntos.filter(p => p.grupo === g.id);
+                        return {
+                            label: `${g.id}. ${g.nombre}`,
+                            data: puntos.map(p => ({ x: p.x, y: p.y })),
+                            borderColor: colorDe(g.id),
+                            backgroundColor: puntos.map(p => (p.prueba ? 'rgba(255,255,255,0.85)' : colorDe(g.id) + 'cc')),
+                            pointRadius: 4, pointHoverRadius: 6, borderWidth: 1.6
+                        };
+                    })
+                },
+                options: {
+                    scales: {
+                        x: G.ejeValores({ title: { display: true, text: 'Dimensión 1', color: G.color.textoSec }, ticks: { display: false } }),
+                        y: G.ejeValores({ title: { display: true, text: 'Dimensión 2', color: G.color.textoSec }, ticks: { display: false } })
+                    },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.dataset.label}` } } }
+                }
+            });
+
+            const kElegido = r.k;
+            G.crear('grafico-silueta', {
+                type: 'bar',
+                data: {
+                    labels: r.evaluacion.map(e => `${e.k}`),
+                    datasets: [{
+                        label: 'Silueta (70 % de entrenamiento)', data: r.evaluacion.map(e => e.silueta),
+                        backgroundColor: r.evaluacion.map(e => (e.k === kElegido ? G.color.acento : G.color.gris)),
+                        borderRadius: 3, borderSkipped: 'start',
+                        etiqueta: v => num(v, 2)
+                    }]
+                },
+                options: {
+                    layout: { padding: { top: 18 } },
+                    scales: {
+                        x: G.ejeCategorias({ title: { display: true, text: 'Número de grupos', color: G.color.textoSec } }),
+                        y: G.ejeValores({ beginAtZero: true, title: { display: true, text: 'Silueta', color: G.color.textoSec } })
+                    },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` Silueta: ${num(c.parsed.y, 3)}${c.parsed.x + 2 === kElegido ? ' (elegido)' : ''}` } } }
+                }
+            });
+
+            document.getElementById('g-tarjetas').innerHTML = r.grupos.map(tarjetaGrupo).join('');
+        }
+
+        function tarjetaGrupo(g) {
+            const color = PALETA[(g.id - 1) % PALETA.length];
+            const a = g.atencion;
+            const barra = g.situaciones.map((s, i) =>
+                `<div class="h-full" style="width:${s.porcentaje}%;background:${G.situacion[s.nombre] || G.color.gris}" title="${esc(s.nombre)}: ${num(s.porcentaje, 0)} %"></div>`).join('');
+            const dato = (etiqueta, valor) => `<div><dt class="text-xs text-gray-500">${etiqueta}</dt><dd class="font-semibold text-gray-900 tabular-nums">${valor}</dd></div>`;
+            return `
+                <article class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col" style="border-top:4px solid ${color}">
+                    <div class="p-5 space-y-4 flex-1">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500">GRUPO ${g.id}</p>
+                            <h3 class="font-semibold text-gray-900 leading-snug">${esc(g.nombre)}</h3>
+                            <p class="text-sm text-gray-600 mt-1"><b class="tabular-nums">${num(g.tamano)}</b> tickets (${num(g.porcentaje, 1)} %) · ${num(g.entrenamiento, 1)} % del entrenamiento y ${num(g.prueba, 1)} % de la prueba</p>
+                        </div>
+                        <div>
+                            <div class="flex h-2.5 rounded-full overflow-hidden bg-gray-100" role="img" aria-label="Situaciones del grupo">${barra}</div>
+                            <ul class="mt-2 space-y-0.5 text-xs text-gray-600">${g.situaciones.map(s =>
+                                `<li class="flex items-center gap-2"><span class="h-2 w-2 rounded-full" style="background:${G.situacion[s.nombre] || G.color.gris}"></span>${esc(s.nombre)}: <b class="tabular-nums">${num(s.porcentaje, 0)} %</b></li>`).join('')}</ul>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-gray-500 mb-1">Lo que más los distingue</p>
+                            <div class="flex flex-wrap gap-1.5">${g.rasgos.length ? g.rasgos.map(r =>
+                                `<span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-800" title="${num(r.porcentaje, 0)} % del grupo; ${num(r.lift, 1)} veces más frecuente que en el total">${esc(r.valor)} <span class="text-gray-500 tabular-nums">${num(r.porcentaje, 0)} %</span></span>`).join('') : '<span class="text-xs text-gray-500">Sin rasgos que destaquen</span>'}</div>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-gray-500 mb-1">Departamentos principales</p>
+                            <p class="text-sm text-gray-700">${g.departamentos.map(d => `${esc(d.nombre)} <span class="text-gray-500 tabular-nums">(${num(d.porcentaje, 0)} %)</span>`).join(', ')}</p>
+                        </div>
+                    </div>
+                    <dl class="grid grid-cols-2 gap-3 bg-gray-50 border-t border-gray-100 p-5 text-sm">
+                        ${dato('Mediana de cierre', a.medianaDias === null ? '-' : `${num(a.medianaDias, 1)} días`)}
+                        ${dato('Incumplen el ANS', a.incumpleAns === null ? '-' : `${num(a.incumpleAns, 0)} %`)}
+                        ${dato('Reabiertos', a.reaperturas === null ? '-' : `${num(a.reaperturas, 1)} %`)}
+                        ${dato('Calificación', a.calificacion === null ? '-' : `${num(a.calificacion, 1)} / 5`)}
+                    </dl>
+                </article>`;
+        }
+
+        // ===== 2. Reglas =====
+
+        const TEMAS_ORDEN = ['Situación', 'Cumplimiento del ANS', 'Departamento', 'Mes', 'Horario', 'Género', 'Documento', 'Congestión al crear', 'Reincidencia', 'Reapertura', 'Satisfacción', 'Día'];
+        let reglasFiltradas = [];
+        let reglasVisibles = 40;
+
+        function chip(item, fuerte = false) {
+            return `<span class="inline-flex flex-wrap items-baseline gap-1 rounded-md px-2 py-1 text-xs ${fuerte ? 'bg-blue-100 text-blue-950' : 'bg-gray-100 text-gray-800'}"><span class="text-[10px] uppercase tracking-wide opacity-70">${esc(item.variable)}</span><b class="font-semibold">${esc(item.valor)}</b></span>`;
+        }
+
+        function frase(r) {
+            const si = r.antecedente.map(a => `${a.variable.toLowerCase()}: ${a.valor}`).join(' y ');
+            return `Cuando un ticket tiene <b>${esc(si)}</b>, en el <b>${num(r.confianza * 100, 0)} %</b> de los casos también tiene <b>${esc(r.consecuente.variable.toLowerCase())}: ${esc(r.consecuente.valor)}</b>, ` +
+                `${num(r.lift, 1)} veces más que en general. ` +
+                (r.estable
+                    ? `En los tickets de prueba la confianza fue de ${num(r.prueba.confianza * 100, 0)} %, así que la regla se sostiene.`
+                    : `Pero en los tickets de prueba la confianza fue de ${r.prueba.confianza === null ? 'no medible' : num(r.prueba.confianza * 100, 0) + ' %'}, así que no es una regla confiable.`);
+        }
+
+        function pintarReglas(r) {
+            if (!r.disponible) return noDisponible('reglas', r.motivo);
+            const estado = document.getElementById('estado-reglas');
+            estado.className = 'hidden';
+            actualizarReparto(r.division);
+
+            document.getElementById('r-resumen').innerHTML = [
+                tarjetaDato('Reglas encontradas', num(r.encontradas), `Con soporte ≥ ${num(r.parametros.minSoporte * 100, 1)} %, confianza ≥ ${num(r.parametros.minConfianza * 100, 0)} % y lift ≥ ${num(r.parametros.minLift, 1)}`),
+                tarjetaDato('Reglas mostradas', num(r.reglas.length), 'Las mejores de cada tema'),
+                tarjetaDato('Se sostienen en la prueba', r.reglas.length ? pct(r.estables / r.reglas.length) : '-', `${num(r.estables)} de ${num(r.reglas.length)} reglas mostradas`),
+                tarjetaDato('Características analizadas', num(r.items), `${num(r.itemsFrecuentes)} aparecen en al menos ${num(r.parametros.minCasos)} tickets`)
+            ].join('');
+
+            // Temas disponibles para filtrar
+            const temas = [...new Set(r.reglas.map(x => x.consecuente.variable))]
+                .sort((a, b) => (TEMAS_ORDEN.indexOf(a) + 100 * (TEMAS_ORDEN.indexOf(a) < 0)) - (TEMAS_ORDEN.indexOf(b) + 100 * (TEMAS_ORDEN.indexOf(b) < 0)));
+            const select = document.getElementById('r-tema');
+            const previo = select.value;
+            select.innerHTML = '<option value="">Todos</option>' + temas.map(t => `<option>${esc(t)}</option>`).join('');
+            select.value = temas.includes(previo) ? previo : '';
+            filtrarReglas();
+        }
+
+        function filtrarReglas() {
+            const r = datos.reglas;
+            if (!r || !r.disponible) return;
+            const tema = document.getElementById('r-tema').value;
+            const soloEstables = document.getElementById('r-estables').checked;
+            const orden = document.getElementById('r-orden').value;
+            reglasFiltradas = r.reglas.filter(x => (!tema || x.consecuente.variable === tema) && (!soloEstables || x.estable))
+                .sort((a, b) => b[orden] - a[orden] || b.lift - a.lift);
+            reglasVisibles = 40;
+            pintarTablaReglas();
+        }
+
+        function pintarTablaReglas() {
+            const visibles = reglasFiltradas.slice(0, reglasVisibles);
+            document.getElementById('r-conteo').textContent = `${num(reglasFiltradas.length)} reglas${reglasFiltradas.length > visibles.length ? ` (se muestran ${num(visibles.length)})` : ''}`;
+            document.getElementById('r-tabla').innerHTML = visibles.length ? visibles.map(x => `
+                <tr class="align-top">
+                    <td class="px-4 py-3"><div class="flex flex-wrap items-center gap-1">${x.antecedente.map(a => chip(a)).join('<span class="text-gray-400 text-xs">y</span>')}</div></td>
+                    <td class="px-4 py-3">${chip(x.consecuente, true)}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">${num(x.casos)}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">${num(x.soporte * 100, 1)} %</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-medium">${num(x.confianza * 100, 0)} %</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-medium">${num(x.lift, 1)}×</td>
+                    <td class="px-4 py-3 text-right tabular-nums">${x.prueba.confianza === null ? '-' : `${num(x.prueba.confianza * 100, 0)} %`}<span class="block text-[11px] text-gray-400">${num(x.prueba.casosAntecedente)} casos</span></td>
+                    <td class="px-4 py-3">${x.estable
+                        ? '<span class="inline-flex items-center gap-1 text-green-800 text-xs font-semibold"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Sí</span>'
+                        : '<span class="inline-flex items-center gap-1 text-amber-800 text-xs font-semibold"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01"/></svg>Poco</span>'}</td>
+                </tr>`).join('')
+                : '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">Ninguna regla cumple estos filtros. Prueba con una confianza o un soporte menores.</td></tr>';
+            document.getElementById('r-mas').classList.toggle('hidden', reglasFiltradas.length <= reglasVisibles);
+
+            const destacada = reglasFiltradas.find(x => x.estable && x.casos >= 30);
+            document.getElementById('r-destacada').classList.toggle('hidden', !destacada);
+            if (destacada) document.getElementById('r-frase').innerHTML = frase(destacada);
+
+            G.crear('grafico-reglas', {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        { label: 'Se sostiene en la prueba', data: reglasFiltradas.filter(x => x.estable).map(x => ({ x: x.soporte * 100, y: x.confianza * 100, lift: x.lift })), backgroundColor: G.color.acento + 'b3', borderColor: G.color.acento, pointRadius: 4 },
+                        { label: 'Poco confiable', data: reglasFiltradas.filter(x => !x.estable).map(x => ({ x: x.soporte * 100, y: x.confianza * 100, lift: x.lift })), backgroundColor: 'rgba(255,255,255,0.9)', borderColor: G.color.serio, borderWidth: 1.6, pointRadius: 4 }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: G.ejeValores({ type: 'logarithmic', title: { display: true, text: 'Soporte (% de tickets, escala logarítmica)', color: G.color.textoSec }, ticks: { callback: v => ([1, 2, 5, 10, 20].includes(v) ? `${v} %` : '') } }),
+                        y: G.ejeValores({ min: 0, max: 100, title: { display: true, text: 'Confianza (%)', color: G.color.textoSec } })
+                    },
+                    plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: c => ` Soporte ${num(c.parsed.x, 1)} % · confianza ${num(c.parsed.y, 0)} % · lift ${num(c.raw.lift, 1)}×` } } }
+                }
+            });
+        }
+
+        // ===== 3. Riesgo =====
+
+        let varianteVista = 'conResponsable';
+        let listaVista = 'enRiesgo';
+
+        const NIVELES = {
+            Vencido: { clase: 'bg-red-100 text-red-900', texto: 'Vencido' },
+            Alto: { clase: 'bg-orange-100 text-orange-900', texto: 'Alto' },
+            Medio: { clase: 'bg-amber-100 text-amber-900', texto: 'Medio' },
+            Bajo: { clase: 'bg-green-100 text-green-900', texto: 'Bajo' },
+            'Sin meta': { clase: 'bg-gray-100 text-gray-700', texto: 'Sin meta' }
+        };
+        const nivelBadge = nivel => `<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${(NIVELES[nivel] || NIVELES['Sin meta']).clase}">${esc((NIVELES[nivel] || NIVELES['Sin meta']).texto)}</span>`;
+
+        function pintarRiesgo(r) {
+            if (!r.disponible) return noDisponible('riesgo', r.motivo);
+            const estado = document.getElementById('estado-riesgo');
+            estado.className = 'hidden';
+            actualizarReparto({ entrenamiento: r.division.entrenamiento, prueba: r.division.prueba, total: r.division.total });
+
+            document.getElementById('ri-metas').innerHTML = r.objetivo.metas.sort((a, b) => a.dias - b.dias).map(m =>
+                `<span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-800"><span class="h-2 w-2 rounded-full" style="background:${G.situacion[m.situacion] || G.color.gris}"></span>${esc(m.situacion)}: <b>${m.dias} días</b></span>`).join('');
+            document.getElementById('ri-datos').innerHTML =
+                `De los <b>${num(r.division.total)}</b> tickets con plazo vencido, <b>${num(r.objetivo.demoras)}</b> (${num(r.objetivo.porcentajeDemoras, 1)} %) tuvieron demora. ` +
+                `Se dejaron fuera ${num(r.exclusiones.dentroDePlazo)} tickets que todavía están dentro de su plazo` +
+                (r.exclusiones.sinSituacion ? ` y ${num(r.exclusiones.sinSituacion)} sin situación (no tienen meta)` : '') + '.';
+            document.getElementById('ri-reparto').innerHTML = [
+                ['Entrenamiento (70 %)', `${num(r.division.entrenamiento)} tickets · ${num(r.division.demorasEntrenamiento, 1)} % con demora`],
+                ['Prueba (30 %)', `${num(r.division.prueba)} tickets · ${num(r.division.demorasPrueba, 1)} % con demora`]
+            ].map(([a, b]) => `<div class="py-2"><dt class="text-gray-500 text-xs">${a}</dt><dd class="font-semibold text-gray-900">${b}</dd></div>`).join('') +
+                '<p class="text-xs text-gray-500 pt-2">Las dos partes conservan la misma proporción de tickets con demora.</p>';
+
+            pintarComparacion(r);
+            pintarVariantes(r);
+            pintarAbiertos(r);
+        }
+
+        function pintarComparacion(r) {
+            const filas = [{ nombre: 'Línea base: siempre «habrá demora»', metricas: r.base, base: true }];
+            for (const id of ['alCrear', 'conResponsable']) {
+                const v = r.variantes[id];
+                if (!v.disponible) continue;
+                filas.push({ nombre: `Árbol de decisión · ${v.nombre.toLowerCase()}`, metricas: v.arbol, variante: id });
+                filas.push({ nombre: `Regresión logística · ${v.nombre.toLowerCase()}`, metricas: v.regresion, variante: id });
+            }
+            const mejor = Math.max(...filas.map(f => f.metricas.prueba.auc));
+            document.getElementById('ri-comparacion').innerHTML = filas.map(f => {
+                const p = f.metricas.prueba;
+                const esMejor = p.auc === mejor && !f.base;
+                const dato = v => (v === null || v === undefined ? '-' : num(v, 3));
+                return `<tr class="${esMejor ? 'bg-blue-50' : ''}">
+                    <td class="px-4 py-3 font-medium text-gray-900">${esc(f.nombre)}${esMejor ? ' <span class="ml-1 text-xs font-semibold text-primary-dark">mejor AUC</span>' : ''}</td>
+                    <td class="px-4 py-3 text-right font-semibold">${dato(p.auc)}</td>
+                    <td class="px-4 py-3 text-right">${dato(p.exactitud)}</td>
+                    <td class="px-4 py-3 text-right">${dato(p.exactitudBalanceada)}</td>
+                    <td class="px-4 py-3 text-right">${dato(p.precision)}</td>
+                    <td class="px-4 py-3 text-right">${dato(p.exhaustividad)}</td>
+                    <td class="px-4 py-3 text-right">${dato(p.f1)}</td>
+                    <td class="px-4 py-3 text-right text-gray-500">${dato(f.metricas.entrenamiento.auc)}</td>
+                </tr>`;
+            }).join('');
+
+            const a = r.variantes.alCrear, c = r.variantes.conResponsable;
+            const partes = [];
+            if (a.disponible) partes.push(`Con solo lo que se sabe al crear el ticket, la regresión logística llega a un AUC de <b>${num(a.regresion.prueba.auc, 3)}</b>: hay señal, pero modesta (la línea base marca 0,500).`);
+            if (c.disponible) partes.push(`Cuando el ticket ya tiene responsable y se sabe cuánto tardó en asignarse, sube a <b>${num(c.regresion.prueba.auc, 3)}</b> y acierta el ${num(c.regresion.prueba.exactitud * 100, 0)} % de los casos, frente al ${num(r.base.prueba.exactitud * 100, 0)} % de la línea base. ` +
+                `Una lectura útil: <b>asignar rápido y bien</b> es lo que más ayuda a cumplir la meta.`);
+            document.getElementById('ri-lectura').innerHTML = partes.join(' ');
+        }
+
+        function pintarVariantes(r) {
+            const contenedor = document.getElementById('ri-variante');
+            const ids = ['alCrear', 'conResponsable'].filter(id => r.variantes[id].disponible);
+            if (!ids.includes(varianteVista)) varianteVista = ids[0];
+            contenedor.innerHTML = ids.map(id => `<button type="button" data-variante="${id}" class="px-4 py-2 font-medium">${esc(r.variantes[id].nombre)}</button>`).join('');
+            contenedor.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { varianteVista = b.dataset.variante; pintarDetalle(r); }));
+            pintarDetalle(r);
+        }
+
+        function pintarDetalle(r) {
+            document.querySelectorAll('#ri-variante button').forEach(b => {
+                const activa = b.dataset.variante === varianteVista;
+                b.setAttribute('aria-pressed', activa);
+                b.className = `px-4 py-2 font-medium ${activa ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`;
+            });
+            const v = r.variantes[varianteVista];
+            document.getElementById('ri-variante-desc').textContent = `${v.descripcion} (${num(v.division.entrenamiento)} tickets de entrenamiento y ${num(v.division.prueba)} de prueba)`;
+
+            // Curva ROC de los modelos de esta variante
+            const curva = datosRoc => datosRoc.map(p => ({ x: p.fpr, y: p.tpr }));
+            G.crear('grafico-roc', {
+                type: 'line',
+                data: {
+                    datasets: [
+                        { label: `Regresión logística (AUC ${num(v.regresion.prueba.auc, 3)})`, data: curva(v.regresion.roc), borderColor: G.color.acento, backgroundColor: G.color.acento, borderWidth: 2, pointRadius: 0, tension: 0.15 },
+                        { label: `Árbol de decisión (AUC ${num(v.arbol.prueba.auc, 3)})`, data: curva(v.arbol.roc), borderColor: PALETA[2], backgroundColor: PALETA[2], borderWidth: 2, pointRadius: 0, stepped: true },
+                        { label: 'Azar (AUC 0,500)', data: [{ x: 0, y: 0 }, { x: 1, y: 1 }], borderColor: G.color.texto, borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    parsing: false,
+                    scales: {
+                        x: G.ejeValores({ type: 'linear', min: 0, max: 1, title: { display: true, text: 'Falsas alarmas', color: G.color.textoSec }, ticks: { callback: v => `${num(v * 100)} %` } }),
+                        y: G.ejeValores({ type: 'linear', min: 0, max: 1, title: { display: true, text: 'Demoras detectadas', color: G.color.textoSec }, ticks: { callback: v => `${num(v * 100)} %` } })
+                    },
+                    plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: c => ` ${c.dataset.label}: detecta ${num(c.parsed.y * 100)} % con ${num(c.parsed.x * 100)} % de falsos positivos` } } }
+                }
+            });
+
+            // Importancia de variables
+            const imp = v.importancia.slice(0, 10);
+            G.crear('grafico-importancia', {
+                type: 'bar',
+                data: {
+                    labels: imp.map(i => i.variable),
+                    datasets: [{
+                        label: 'Caída del AUC', data: imp.map(i => Math.max(0, i.importancia)),
+                        backgroundColor: imp.map(i => (i.importancia > 0.005 ? G.color.acento : G.color.gris)),
+                        borderRadius: 3, borderSkipped: 'start',
+                        etiqueta: valor => (valor > 0 ? num(valor, 3) : '')
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    layout: { padding: { right: 36 } },
+                    scales: {
+                        x: G.ejeValores({ beginAtZero: true, title: { display: true, text: 'Cuánto baja el AUC al desordenar la variable', color: G.color.textoSec } }),
+                        y: G.ejeCategorias({ ticks: { color: G.color.textoSec, autoSkip: false } })
+                    },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` El AUC baja ${num(c.parsed.x, 3)}` } } }
+                }
+            });
+
+            // Matriz de confusión
+            const m = v.regresion.prueba.matriz;
+            const celda = (n, bien) => `<td class="p-3 text-center border border-white ${bien ? 'bg-green-100 text-green-950' : 'bg-red-50 text-red-950'}"><span class="block text-2xl font-bold tabular-nums">${num(n)}</span><span class="text-xs">${bien ? 'acierto' : 'error'}</span></td>`;
+            document.getElementById('ri-matriz').innerHTML = `
+                <table class="w-full text-sm">
+                    <thead><tr><td></td><th scope="col" class="p-2 text-xs font-medium text-gray-500">Realmente tuvo demora</th><th scope="col" class="p-2 text-xs font-medium text-gray-500">Realmente no tuvo demora</th></tr></thead>
+                    <tbody>
+                        <tr><th scope="row" class="p-2 text-xs font-medium text-gray-500 text-left">El modelo dijo «demora»</th>${celda(m.vp, true)}${celda(m.fp, false)}</tr>
+                        <tr><th scope="row" class="p-2 text-xs font-medium text-gray-500 text-left">El modelo dijo «a tiempo»</th>${celda(m.fn, false)}${celda(m.vn, true)}</tr>
+                    </tbody>
+                </table>
+                <p class="text-xs text-gray-500 mt-3">De los ${num(m.vp + m.fp)} tickets que el modelo marcó con demora, ${num(m.vp)} realmente la tuvieron (precisión ${num(v.regresion.prueba.precision * 100, 0)} %). Detectó ${num(m.vp)} de los ${num(m.vp + m.fn)} que sí se demoraron (exhaustividad ${num(v.regresion.prueba.exhaustividad * 100, 0)} %).</p>`;
+
+            document.getElementById('ri-niveles').innerHTML = v.regresion.niveles.map(n => `
+                <tr><td class="py-2.5">${nivelBadge(n.nivel)}</td><td class="py-2.5 text-right">${num(n.tickets)}</td>
+                    <td class="py-2.5 text-right font-semibold">${n.incumplen === null ? '-' : `${num(n.incumplen, 0)} %`}</td></tr>`).join('');
+
+            // Reglas del árbol
+            document.getElementById('ri-arbol').innerHTML = v.arbol.reglas.map(x => `
+                <div class="rounded-lg border border-gray-200 p-3">
+                    <p class="text-sm text-gray-800">${x.condiciones.length ? x.condiciones.map(c => esc(c)).join(' <span class="text-gray-400">y</span> ') : 'Todos los tickets'}</p>
+                    <div class="mt-2 flex items-center gap-3 text-xs text-gray-600">
+                        <div class="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden" role="img" aria-label="${num(x.probabilidad * 100)} % con demora"><div class="h-full" style="width:${x.probabilidad * 100}%;background:${x.probabilidad >= 0.7 ? G.color.critico : x.probabilidad >= 0.5 ? G.color.advertencia : G.color.bueno}"></div></div>
+                        <span class="tabular-nums whitespace-nowrap"><b>${num(x.probabilidad * 100)} %</b> con demora (${num(x.casos)} tickets)</span>
+                        <span class="tabular-nums whitespace-nowrap text-gray-500">prueba: ${x.prueba.probabilidad === null ? '-' : `${num(x.prueba.probabilidad * 100)} %`} (${num(x.prueba.casos)})</span>
+                    </div>
+                </div>`).join('');
+
+            // Factores de la regresión
+            document.getElementById('ri-efectos').innerHTML = v.efectos.slice(0, 12).map(e => {
+                const nombre = e.valor ? `${e.variable}: ${e.valor}` : e.variable;
+                const sube = e.razon > 1;
+                return `<tr><td class="py-2">${esc(nombre)}</td>
+                    <td class="py-2 text-right font-semibold ${sube ? 'text-red-800' : 'text-green-800'}">${sube ? '▲' : '▼'} ×${num(e.razon, 2)} <span class="font-normal text-xs text-gray-500">${sube ? 'sube el riesgo' : 'baja el riesgo'}</span></td></tr>`;
+            }).join('');
+            document.getElementById('ri-variables').textContent = `Variables de la variante «${v.nombre.toLowerCase()}»: ${v.variables.join(', ').toLowerCase()}. Mejor penalización de la regresión: λ = ${v.regresion.lambda}. Profundidad elegida para el árbol: ${v.arbol.profundidad}.`;
+        }
+
+        function pintarAbiertos(r) {
+            const a = r.abiertos;
+            document.getElementById('ri-abiertos').innerHTML = [
+                tarjetaDato('Tickets abiertos', num(a.total)),
+                tarjetaDato('Ya vencidos', num(a.vencidos), 'Pasaron su meta'),
+                tarjetaDato('Riesgo alto', num(a.alto), '70 % o más'),
+                tarjetaDato('Riesgo medio', num(a.medio), '50 % a 70 %'),
+                tarjetaDato('Riesgo bajo', num(a.bajo), 'Menos de 50 %')
+            ].join('');
+            pintarLista(r);
+        }
+
+        function pintarLista(r) {
+            document.querySelectorAll('[data-lista]').forEach(b => {
+                const activa = b.dataset.lista === listaVista;
+                b.setAttribute('aria-selected', activa);
+                b.className = `py-2 border-b-2 font-medium ${activa ? 'border-primary text-primary-dark' : 'border-transparent text-gray-500 hover:text-gray-800'}`;
+            });
+            const filas = r[listaVista];
+            const total = listaVista === 'vencidos' ? r.abiertos.vencidos : r.abiertos.alto + r.abiertos.medio + r.abiertos.bajo;
+            const verTicket = App.puede('tickets.ver_todos');
+            document.getElementById('ri-lista').innerHTML = filas.length ? filas.map(f => {
+                const enlace = verTicket ? `<a href="/tickets/${f.id}" class="text-primary-dark hover:underline font-medium">T-${f.id}</a>` : `<span class="font-medium">T-${f.id}</span>`;
+                const restante = f.diasRestantes === null ? '-' : f.diasRestantes < 0
+                    ? `<span class="text-red-800 font-semibold">Vencido hace ${num(-f.diasRestantes, 1)} d</span>`
+                    : `${num(f.diasRestantes, 1)} d`;
+                const riesgo = f.nivel === 'Vencido' ? '<span class="text-xs text-gray-500">Ya incumplió</span>'
+                    : f.probabilidad === null ? '-'
+                        : `<div class="flex items-center gap-2"><div class="w-20 h-2 rounded-full bg-gray-100 overflow-hidden" role="img" aria-label="${num(f.probabilidad * 100)} %"><div class="h-full" style="width:${f.probabilidad * 100}%;background:${f.probabilidad >= 0.7 ? G.color.critico : f.probabilidad >= 0.5 ? G.color.advertencia : G.color.bueno}"></div></div><span class="tabular-nums font-semibold">${num(f.probabilidad * 100)} %</span>${nivelBadge(f.nivel)}</div>`;
+                return `<tr class="align-top">
+                    <td class="px-4 py-3">${enlace}</td>
+                    <td class="px-4 py-3">${esc(f.situacion ?? 'Sin dato')}</td>
+                    <td class="px-4 py-3">${esc(f.departamento ?? 'Sin dato')}</td>
+                    <td class="px-4 py-3">${App.estadoBadge(f.estado)}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">${num(f.edadDias, 1)} / ${f.ans ?? '-'}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">${restante}</td>
+                    <td class="px-4 py-3">${riesgo}</td>
+                    <td class="px-4 py-3 text-xs text-gray-600">${f.motivos.length ? f.motivos.map(m => esc(m)).join(' · ') : '-'}</td>
+                </tr>`;
+            }).join('') : `<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">${listaVista === 'vencidos' ? 'No hay tickets vencidos.' : 'No hay tickets abiertos que sigan a tiempo.'}</td></tr>`;
+            document.getElementById('ri-lista-nota').textContent = total > filas.length
+                ? `Se muestran los ${num(filas.length)} más ${listaVista === 'vencidos' ? 'atrasados' : 'riesgosos'} de ${num(total)}.`
+                : (listaVista === 'enRiesgo' ? 'Ordenados de mayor a menor probabilidad de demora. La columna «Por qué» indica qué características del ticket empujan más el riesgo.' : 'Ordenados del más atrasado al menos atrasado.');
+        }
+
+        // ===== Arranque =====
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await App.iniciar();
+            G.configurar();
+
+            document.querySelectorAll('[data-pestana]').forEach(b => b.addEventListener('click', () => mostrarPestana(b.dataset.pestana)));
+            document.querySelectorAll('[data-lista]').forEach(b => b.addEventListener('click', () => { listaVista = b.dataset.lista; if (datos.riesgo) pintarLista(datos.riesgo); }));
+
+            document.getElementById('k').addEventListener('change', () => cargar('grupos'));
+            for (const id of ['r-soporte', 'r-confianza']) document.getElementById(id).addEventListener('change', () => cargar('reglas'));
+            for (const id of ['r-tema', 'r-orden', 'r-estables']) document.getElementById(id).addEventListener('change', filtrarReglas);
+            document.getElementById('controles-reglas').addEventListener('submit', e => e.preventDefault());
+            document.getElementById('r-mas').addEventListener('click', () => { reglasVisibles += 40; pintarTablaReglas(); });
+
+            document.getElementById('actualizar').addEventListener('click', async () => {
+                forzarActualizar = true;
+                Object.keys(cargado).forEach(k => { cargado[k] = false; });
+                await cargar(pestanaActual);
+                forzarActualizar = false;
+                if (cargado[pestanaActual]) App.aviso('Datos actualizados.');
+            });
+
+            mostrarPestana(location.hash.replace('#', ''));
+        });
+    </script>
+</body>
+</html>

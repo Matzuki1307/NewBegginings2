@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node server.js",
+    "test": "node --test",
     "seed:demo": "node scripts/seed-demo.js",
     "mineria:exportar": "node scripts/exportar-mineria.js"
   },
