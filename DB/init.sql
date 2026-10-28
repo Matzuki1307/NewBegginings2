@@ -256,8 +256,9 @@ INSERT INTO permisos (codigo, nombre, descripcion, modulo, orden) VALUES
     ('beneficiarios.consultar', 'Consultar beneficiarios',     'Buscar beneficiarios y ver su información',                    'Gestión',        10),
     ('estadisticas.ver',        'Consultar estadísticas',      'Ver el resumen estadístico de los tickets',                    'Gestión',        11),
     ('modelado.ver',            'Modelado y simulación',       'Proyectar la demanda con modelos determinísticos y estocásticos', 'Gestión',     12),
-    ('usuarios.gestionar',      'Gestionar usuarios',          'Crear, editar y desactivar usuarios',                          'Administración', 13),
-    ('roles.gestionar',         'Gestionar roles y permisos',  'Configurar roles, permisos, tarjetas y campos del formulario', 'Administración', 14)
+    ('mineria.ver',             'Minería de datos',            'Ver los grupos de casos, las reglas de asociación y el riesgo de demora', 'Gestión', 13),
+    ('usuarios.gestionar',      'Gestionar usuarios',          'Crear, editar y desactivar usuarios',                          'Administración', 14),
+    ('roles.gestionar',         'Gestionar roles y permisos',  'Configurar roles, permisos, tarjetas y campos del formulario', 'Administración', 15)
 ON CONFLICT (codigo) DO UPDATE SET
     nombre = EXCLUDED.nombre, descripcion = EXCLUDED.descripcion, modulo = EXCLUDED.modulo, orden = EXCLUDED.orden;
 
@@ -268,8 +269,9 @@ INSERT INTO tarjetas (codigo, nombre, descripcion, ruta, permiso_codigo, orden) 
     ('beneficiarios', 'Beneficiarios',      'Busca personas y revisa sus solicitudes', '/beneficiarios',  'beneficiarios.consultar', 4),
     ('estadisticas',  'Estadísticas',       'Resumen del estado de las solicitudes',   '/estadisticas',   'estadisticas.ver',        5),
     ('modelado',      'Modelado',           'Simula la demanda y la capacidad de atención', '/modelado', 'modelado.ver',          6),
-    ('usuarios',      'Usuarios',           'Crea funcionarios y administra cuentas',  '/admin/usuarios', 'usuarios.gestionar',      7),
-    ('roles',         'Roles y permisos',   'Define qué puede ver y hacer cada rol',   '/admin/roles',    'roles.gestionar',         8)
+    ('mineria',       'Minería de datos',   'Descubre grupos, reglas y riesgos de demora', '/mineria',   'mineria.ver',             7),
+    ('usuarios',      'Usuarios',           'Crea funcionarios y administra cuentas',  '/admin/usuarios', 'usuarios.gestionar',      8),
+    ('roles',         'Roles y permisos',   'Define qué puede ver y hacer cada rol',   '/admin/roles',    'roles.gestionar',         9)
 ON CONFLICT (codigo) DO UPDATE SET
     nombre = EXCLUDED.nombre, descripcion = EXCLUDED.descripcion, ruta = EXCLUDED.ruta,
     permiso_codigo = EXCLUDED.permiso_codigo, orden = EXCLUDED.orden;

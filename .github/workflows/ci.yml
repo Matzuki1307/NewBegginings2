@@ -13,6 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Pruebas unitarias (minería de datos)
+        run: npm test
+
       - name: Construir y levantar con Docker Compose
         run: docker compose up -d --build --wait
 
@@ -56,6 +59,12 @@ jobs:
           curl -fsS -b func.txt $B/api/tickets/$ID/historial | grep -q "Cierre"
           # El funcionario no puede administrar usuarios
           test "$(curl -s -o /dev/null -w '%{http_code}' -b func.txt $B/api/usuarios)" = "403"
+          # Minería de datos: el administrador la consulta (aunque haya pocos datos); sin el permiso o sin sesión no se entra
+          for u in grupos reglas riesgo; do
+            curl -fsS -b admin.txt $B/api/mineria/$u | grep -q '"disponible"'
+            test "$(curl -s -o /dev/null -w '%{http_code}' -b func.txt $B/api/mineria/$u)" = "403"
+          done
+          test "$(curl -s -o /dev/null -w '%{http_code}' $B/api/mineria/riesgo)" = "401"
 
       - name: Logs si algo falla
         if: failure()

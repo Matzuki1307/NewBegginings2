@@ -2,6 +2,7 @@ const express = require('express');
 const { pool } = require('../DB/db');
 const { requireLogin, requirePermiso, tienePermiso } = require('../middleware/auth');
 const { limpiar } = require('../lib/validacion');
+const { META_ANS } = require('../lib/ans');
 
 const router = express.Router();
 
@@ -102,8 +103,7 @@ router.get('/api/panel/resumen', requireLogin, async (req, res) => {
     res.json(indicadores);
 });
 
-// Meta de cierre (ANS) en días según la situación
-const META_ANS = { 'Violencia contra la mujer': 5, 'Maltrato intrafamiliar': 10, 'Desplazamiento forzado': 20 };
+// Meta de cierre (ANS) en días según la situación, como expresión SQL
 const ANS_SQL = `CASE situacion ${Object.entries(META_ANS).map(([s, d]) => `WHEN '${s}' THEN ${d}`).join(' ')} END`;
 
 // Definición de los KPI (documento "Datos, métricas y KPI"). sentido: si el valor debe ser

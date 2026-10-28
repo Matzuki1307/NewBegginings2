@@ -93,6 +93,7 @@ app.get('/beneficiarios', requirePagePermiso('beneficiarios.consultar'), pagina(
 // Administración
 app.get('/estadisticas', requirePagePermiso('estadisticas.ver'), pagina('estadisticas.html'));
 app.get('/modelado', requirePagePermiso('modelado.ver'), pagina('modelado.html'));
+app.get('/mineria', requirePagePermiso('mineria.ver'), pagina('mineria.html'));
 app.get('/admin/usuarios', requirePagePermiso('usuarios.gestionar'), pagina('admin-usuarios.html'));
 app.get('/admin/roles', requirePagePermiso('roles.gestionar'), pagina('admin-roles.html'));
 
@@ -103,6 +104,7 @@ app.use(require('./routes/catalogos'));
 app.use(require('./routes/tickets'));
 app.use(require('./routes/reportes'));
 app.use(require('./routes/modelado'));
+app.use(require('./routes/mineria'));
 app.use(require('./routes/admin'));
 
 // Errores no controlados en las rutas
